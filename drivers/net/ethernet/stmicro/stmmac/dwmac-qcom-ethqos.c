@@ -1220,6 +1220,31 @@ smmu_probe_done:
 	return result;
 }
 
+static void ethqos_clks_disable(void *data)
+{
+	ethqos_clks_config(data, false);
+}
+
+static void qcom_ethqos_parse_dt(struct qcom_ethqos *ethqos)
+{
+	struct device_node *np = ethqos->pdev->dev.of_node;
+
+	ethqos->phyad_change =
+		of_property_read_bool(np, "qcom,phyad_change");
+	ETHQOSDBG("qcom,phyad_change %s\n",
+		  ethqos->phyad_change ? "present" : "not present");
+
+	ethqos->is_gpio_phy_reset =
+		of_property_read_bool(np, "snps,reset-gpios");
+	ETHQOSDBG("qcom,phy-reset %s\n",
+		  ethqos->is_gpio_phy_reset ? "present" : "not present");
+
+	ethqos->rgmii_config_loopback_en =
+		of_property_read_bool(np, "qcom,rgmii-config-loopback");
+	ETHQOSDBG("qcom,rgmii-config-loopback %s\n",
+		  ethqos->rgmii_config_loopback_en ? "enabled" : "disabled");
+}
+
 static int qcom_ethqos_probe(struct platform_device *pdev)
 {
 	struct device_node *np = pdev->dev.of_node;
@@ -1250,6 +1275,8 @@ static int qcom_ethqos_probe(struct platform_device *pdev)
 	ethqos = devm_kzalloc(&pdev->dev, sizeof(*ethqos), GFP_KERNEL);
 	if (!ethqos)
 		return -ENOMEM;
+
+	qcom_ethqos_parse_dt(ethqos);
 
 	plat_dat->clks_config = ethqos_clks_config;
 
@@ -1325,6 +1352,9 @@ static int qcom_ethqos_probe(struct platform_device *pdev)
 	plat_dat->has_gmac4 = 1;
 	if (ethqos->has_emac_ge_3)
 		plat_dat->dwmac4_addrs = &data->dwmac4_addrs;
+	plat_dat->phyad_change = ethqos->phyad_change;
+	plat_dat->is_gpio_phy_reset = ethqos->is_gpio_phy_reset;
+
 	/* Set mdio phy addr probe capability to c22 .
 	 * If c22_c45 is set then multiple phy is getting detected.
 	 */
