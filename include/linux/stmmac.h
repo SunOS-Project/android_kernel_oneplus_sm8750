@@ -8,6 +8,7 @@
 
   Author: Giuseppe Cavallaro <peppe.cavallaro@st.com>
 *******************************************************************************/
+/* Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries. */
 
 #ifndef __STMMAC_PLATFORM_DATA
 #define __STMMAC_PLATFORM_DATA
@@ -189,6 +190,18 @@ struct stmmac_safety_feature_cfg {
 	u32 tmouten;
 };
 
+struct emac_emb_smmu_cb_ctx {
+	bool valid;
+	struct platform_device *pdev_master;
+	struct platform_device *smmu_pdev;
+	struct dma_iommu_mapping *mapping;
+	struct iommu_domain *iommu_domain;
+	u32 va_start;
+	u32 va_size;
+	u32 va_end;
+	int ret;
+};
+
 /* Addresses that may be customized by a platform */
 struct dwmac4_addrs {
 	u32 dma_chan;
@@ -313,5 +326,10 @@ struct plat_stmmacenet_data {
 	int msi_tx_base_vec;
 	const struct dwmac4_addrs *dwmac4_addrs;
 	unsigned int flags;
+	bool use_phy_wol;
+	bool sph_disable;
+	struct emac_emb_smmu_cb_ctx stmmac_emb_smmu_ctx;
+	bool phy_intr_en_extn_stm;
+	int has_c22_mdio_probe_capability;
 };
 #endif
