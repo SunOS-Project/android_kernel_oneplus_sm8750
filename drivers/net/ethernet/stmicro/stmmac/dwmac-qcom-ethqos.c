@@ -591,6 +591,9 @@ static int ethqos_rgmii_macro_init(struct qcom_ethqos *ethqos)
 			/* 0.9 ns */
 			rgmii_updatel(ethqos, SDCC_DDR_CONFIG_PRG_RCLK_DLY,
 				      115, SDCC_HC_REG_DDR_CONFIG);
+		else if (ethqos->emac_ver == EMAC_HW_v2_3_1)
+			rgmii_updatel(ethqos, SDCC_DDR_CONFIG_PRG_RCLK_DLY,
+				      104, SDCC_HC_REG_DDR_CONFIG);
 		else if (ethqos->emac_ver == EMAC_HW_v2_3_2_RG)
 			rgmii_updatel(ethqos, SDCC_DDR_CONFIG_PRG_RCLK_DLY,
 				      69, SDCC_HC_REG_DDR_CONFIG);
@@ -628,10 +631,11 @@ static int ethqos_rgmii_macro_init(struct qcom_ethqos *ethqos)
 			      BIT(6), RGMII_IO_MACRO_CONFIG);
 		rgmii_updatel(ethqos, RGMII_CONFIG2_RSVD_CONFIG15,
 			      0, RGMII_IO_MACRO_CONFIG2);
-
 		if (ethqos->has_emac_ge_3 ||
-		    ethqos->emac_ver == EMAC_HW_v2_3_2_RG ||
-		    ethqos->emac_ver == EMAC_HW_v2_1_2)
+			ethqos->emac_ver == EMAC_HW_v2_3_2_RG ||
+			ethqos->emac_ver == EMAC_HW_v2_1_2 ||
+			ethqos->emac_ver == EMAC_HW_v2_1_1 ||
+			ethqos->emac_ver == EMAC_HW_v2_3_1)
 			rgmii_updatel(ethqos, RGMII_CONFIG2_RX_PROG_SWAP,
 				      RGMII_CONFIG2_RX_PROG_SWAP,
 				      RGMII_IO_MACRO_CONFIG2);
