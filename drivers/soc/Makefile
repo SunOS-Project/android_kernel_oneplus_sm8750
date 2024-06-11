@@ -65,3 +65,17 @@ obj-$(CONFIG_OPLUS_SENSOR_CONSUMER_IR_CORE) += oplus/oplus_consumer_ir/
 #ifdef OPLUS_FEATURE_MDMFEATURE
 obj-$(CONFIG_OPLUS_FEATURE_MDMFEATURE)     += oplus/mdmfeature/
 #endif /*OPLUS_FEATURE_MDMFEATURE*/
+
+
+#ifdef OPLUS_FEATURE_MODEM_MINIDUMP
+obj-$(CONFIG_OPLUS_FEATURE_RECORD_MDMRST)     += oplus/mdmrst/
+#endif /*OPLUS_FEATURE_MODEM_MINIDUMP*/
+
+obj-$(CONFIG_OPLUS_FEATURE_QCOM_WATCHDOG) += oplus/boot/qcom_watchdog/
+obj-y += oplus/dft/
+
+obj-y     += oplus/storage/
+
+#ifdef OPLUS_SUBSYS_SLEEP_MONITOR
+obj-$(CONFIG_OPLUS_SUBSYS_SLEEP_MONITOR)     += oplus/power/subsys_sleep_monitor/
+#endif /* OPLUS_SUBSYS_SLEEP_MONITOR */

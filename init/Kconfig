@@ -890,6 +890,10 @@ config UCLAMP_BUCKETS_COUNT
 source "kernel/oplus_cpu/thermal/Kconfig"
 #endif /* OPLUS_FEATURE_THERMAL_HORAE */
 
+#ifdef OPLUS_FEATURE_PERFORMANCE_SCHED
+source "kernel/oplus_cpu/sched/Kconfig"
+#endif /* OPLUS_FEATURE_PERFORMANCE_SCHED */
+
 endmenu
 
 #

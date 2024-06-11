@@ -20,7 +20,9 @@ static int one_hundred = 100;
 static int one_thousand = 1000;
 static int one_thousand_twenty_four = 1024;
 static int two_thousand = 2000;
+#if !IS_ENABLED(CONFIG_OPLUS_FEATURE_PIPELINE)
 static int walt_max_cpus = WALT_NR_CPUS;
+#endif
 
 /*
  * CFS task prio range is [100 ... 139]
@@ -1280,6 +1282,7 @@ struct ctl_table walt_table[] = {
 		.mode		= 0644,
 		.proc_handler	= sched_task_handler,
 	},
+#if !IS_ENABLED(CONFIG_OPLUS_FEATURE_PIPELINE)
 	{
 		.procname	= "sched_pipeline",
 		.data		= (int *) PIPELINE,
@@ -1287,6 +1290,7 @@ struct ctl_table walt_table[] = {
 		.mode		= 0644,
 		.proc_handler	= sched_task_handler,
 	},
+#endif
 	{
 		.procname	= "task_load_boost",
 		.data		= (int *) LOAD_BOOST,
@@ -1294,6 +1298,7 @@ struct ctl_table walt_table[] = {
 		.mode		= 0644,
 		.proc_handler	= sched_task_handler,
 	},
+
 	{
 		.procname	= "task_reduce_affinity",
 		.data		= (int *) REDUCE_AFFINITY,
@@ -1400,6 +1405,7 @@ struct ctl_table walt_table[] = {
 		.extra1		= SYSCTL_ZERO,
 		.extra2		= &one_thousand_twenty_four,
 	},
+#if !IS_ENABLED(CONFIG_OPLUS_FEATURE_PIPELINE)
 	{
 		.procname	= "sched_heavy_nr",
 		.data		= &sysctl_sched_heavy_nr,
@@ -1409,6 +1415,17 @@ struct ctl_table walt_table[] = {
 		.extra1		= SYSCTL_ZERO,
 		.extra2		= &walt_max_cpus,
 	},
+#else
+	{
+		.procname	= "enable_pipeline_boost",
+		.data		= &enable_pipeline_boost,
+		.maxlen		= sizeof(unsigned int),
+		.mode		= 0664,
+		.proc_handler	= proc_douintvec_minmax,
+		.extra1		= SYSCTL_ZERO,
+		.extra2		= SYSCTL_ONE,
+	},
+#endif
 	{
 		.procname	= "sched_sbt_enable",
 		.data		= &sysctl_sched_sbt_enable,
