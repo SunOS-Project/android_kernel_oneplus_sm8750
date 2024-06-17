@@ -7,3 +7,6 @@ obj-$(CONFIG_ANDROID_BINDER_IPC_SELFTEST) += binder_alloc_selftest.o
 obj-$(CONFIG_ANDROID_DEBUG_SYMBOLS)	+= android_debug_symbols.o
 obj-$(CONFIG_ANDROID_VENDOR_HOOKS) += vendor_hooks.o
 obj-$(CONFIG_ANDROID_DEBUG_KINFO)	+= debug_kinfo.o
+#ifdef CONFIG_OPLUS_BINDER_STRATEGY
+obj-$(CONFIG_OPLUS_BINDER_STRATEGY) += oplus_binder/
+#endif
