@@ -291,8 +291,9 @@ int input_boost_init(void)
 						FREQ_QOS_MIN, policy->cpuinfo.min_freq);
 #else
 		ret = freq_qos_add_request(&policy->constraints, req,
-#endif
 						FREQ_QOS_MIN, policy->min);
+
+#endif
 		if (ret < 0) {
 			pr_err("%s: Failed to add freq constraint (%d)\n",
 							__func__, ret);

@@ -84,10 +84,6 @@ source "kernel/oplus_cpu/cpufreq_bouncing/Kconfig"
 source "kernel/oplus_cpu/oplus_overload/Kconfig"
 #endif /* OPLUS_FEATURE_ABNORMAL_FLAG */
 
-#ifdef OPLUS_FEATURE_QCOM_WATCHDOG
-source "drivers/soc/oplus/boot/qcom_watchdog/Kconfig"
-#endif
-
 source "drivers/soc/oplus/storage/Kconfig"
 
 #ifdef OPLUS_SUBSYS_SLEEP_MONITOR
