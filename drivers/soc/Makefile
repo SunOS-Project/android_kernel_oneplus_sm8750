@@ -79,3 +79,12 @@ obj-y     += oplus/storage/
 #ifdef OPLUS_SUBSYS_SLEEP_MONITOR
 obj-$(CONFIG_OPLUS_SUBSYS_SLEEP_MONITOR)     += oplus/power/subsys_sleep_monitor/
 #endif /* OPLUS_SUBSYS_SLEEP_MONITOR */
+
+#ifdef OPLUS_FEATURE_MODEM_MINIDUMP
+obj-$(CONFIG_OPLUS_FEATURE_RECORD_MDMRST)     += oplus/mdmrst/
+#endif /*OPLUS_FEATURE_MODEM_MINIDUMP*/
+
+
+#ifdef OPLUS_FEATURE_MIDAS
+obj-$(CONFIG_OPLUS_FEATURE_MIDAS_GKI) += oplus/midas/
+#endif /*OPLUS_FEATURE_MIDAS*/
