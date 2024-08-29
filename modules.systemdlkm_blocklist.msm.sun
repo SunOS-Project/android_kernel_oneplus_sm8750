@@ -6,3 +6,5 @@ blocklist can-gw
 blocklist can-raw
 blocklist kheaders
 blocklist ptp_kvm
+blocklist zram
+blocklist zsmalloc
