@@ -284,6 +284,14 @@ config QCOM_QFPROM_SYS
 
            Say y here to enable QFPROM SYS support.
 
+config MSM_CORE_HANG_DETECT
+        tristate "MSM Core Hang Detection Support"
+        help
+          This enables the core hang detection module. It causes SoC
+          reset on core hang detection and collects the core context
+          for hang. By using sysfs entries core hang detection can be
+          enabled or disabled dynamically.
+
 config QCOM_RAMP_CTRL
 	tristate "Qualcomm Ramp Controller driver"
 	depends on ARCH_QCOM || COMPILE_TEST
