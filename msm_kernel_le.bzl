@@ -135,7 +135,6 @@ def _define_kernel_build(
 
     out_list.extend([
         "scripts/sign-file",
-        "certs/signing_key.pem",
         "certs/signing_key.x509",
     ])
 
@@ -155,6 +154,8 @@ def _define_kernel_build(
         dtstree = dtstree,
         kmi_symbol_list = None,
         additional_kmi_symbol_lists = None,
+        module_signing_key = ":signing_key",
+        system_trusted_key = ":verity_cert.pem",
         visibility = ["//visibility:public"],
     )
 
