@@ -6,6 +6,8 @@ qcom_wdt_core.ko
 qcom_soc_wdt.ko
 memory_dump_v2.ko
 qcom-scm.ko
+pinctrl-msm.ko
+pinctrl-sm6150.ko
 llcc-qcom.ko
 qcom_hwspinlock.ko
 secure_buffer.ko
