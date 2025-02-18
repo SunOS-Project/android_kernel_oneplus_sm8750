@@ -73,18 +73,6 @@
 #define qcom_ice_readl(engine, reg)	\
 	readl((engine)->base + (reg))
 
-struct qcom_ice {
-	struct device *dev;
-	void __iomem *base;
-	struct device_link *link;
-
-	struct clk *core_clk;
-	u8 hwkm_version;
-	bool use_hwkm;
-	bool hwkm_init_complete;
-	bool handle_clks;
-};
-
 union crypto_cfg {
 	__le32 regval;
 	struct {
