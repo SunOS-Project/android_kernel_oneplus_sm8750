@@ -491,6 +491,7 @@ extern unsigned int sysctl_sched_sbt_enable;
 extern unsigned int sysctl_sched_sbt_delay_windows;
 
 extern cpumask_t cpus_for_pipeline;
+extern unsigned int pipeline_swap_util_th;
 
 /* WALT cpufreq interface */
 #define WALT_CPUFREQ_ROLLOVER_BIT		BIT(0)

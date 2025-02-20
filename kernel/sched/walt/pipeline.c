@@ -14,6 +14,7 @@ int pipeline_nr;
 static DEFINE_RAW_SPINLOCK(heavy_lock);
 static struct walt_task_struct *heavy_wts[MAX_NR_PIPELINE];
 bool pipeline_pinning;
+unsigned int pipeline_swap_util_th;
 
 static inline int pipeline_demand(struct walt_task_struct *wts)
 {
@@ -568,7 +569,8 @@ void rearrange_heavy(u64 window_start, bool force)
 {
 	struct walt_task_struct *prime_wts = NULL;
 	struct walt_task_struct *other_wts = NULL;
-	unsigned long flags;
+	unsigned long flags, prime_util, other_util;
+	bool prime_wts_fits_lower = true;
 
 	if (!pipeline_in_progress())
 		return;
@@ -631,7 +633,27 @@ void rearrange_heavy(u64 window_start, bool force)
 
 	/* swap prime for have_heavy_list >= 3 */
 	find_prime_and_max_tasks(heavy_wts, &prime_wts, &other_wts);
-	swap_pipeline_with_prime_locked(prime_wts, other_wts);
+	prime_util = other_util = 0;
+
+	if (prime_wts) {
+		prime_util = pipeline_demand(prime_wts);
+		prime_wts_fits_lower = task_fits_capacity(wts_to_ts(prime_wts),
+					cpumask_last(&cpu_array[0][num_sched_clusters - 2]));
+	}
+	if (other_wts)
+		other_util = pipeline_demand(other_wts);
+
+	/*
+	 * default behavior if pipeline_swap_util_th == 0 is to swap gold and prime pipeline
+	 * tasks if task running on Gold has higher demand than prime.
+	 * But if pipeline_swap_util_th > 0 then swap only under following condition (strict
+	 * swapping):
+	 * - if task on prime can fit AND
+	 *		util for task on Gold > util of task on prime + pipeline_swap_util_th
+	 */
+	if (!pipeline_swap_util_th || (prime_wts_fits_lower &&
+					((prime_util + pipeline_swap_util_th) < other_util)))
+		swap_pipeline_with_prime_locked(prime_wts, other_wts);
 
 out:
 	raw_spin_unlock_irqrestore(&heavy_lock, flags);
