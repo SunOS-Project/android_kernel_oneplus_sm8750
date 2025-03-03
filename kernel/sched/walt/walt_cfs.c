@@ -1144,7 +1144,7 @@ static void binder_set_priority_hook(void *data,
 
 	if (task && ((task_in_related_thread_group(current) &&
 			task->group_leader->prio < MAX_RT_PRIO) ||
-			(walt_get_mvp_task_prio(current) == WALT_LL_PIPE_MVP) ||
+			(walt_get_mvp_task_prio(current) == WALT_LL_MVP) ||
 			(current->group_leader->prio < MAX_RT_PRIO &&
 			task_in_related_thread_group(task))))
 		wts->low_latency |= WALT_LOW_LATENCY_BINDER_BIT;
@@ -1184,10 +1184,11 @@ static void binder_restore_priority_hook(void *data,
  */
 int walt_get_mvp_task_prio(struct task_struct *p)
 {
-	if (walt_procfs_low_latency_task(p) ||
-			(pipeline_in_progress() &&
-			 walt_pipeline_low_latency_task(p)))
-		return WALT_LL_PIPE_MVP;
+	if (walt_pipeline_low_latency_task(p))
+		return WALT_PIPELINE_MVP;
+
+	if (walt_procfs_low_latency_task(p))
+		return WALT_LL_MVP;
 
 	if (per_task_boost(p) == TASK_BOOST_STRICT_MAX)
 		return WALT_TASK_BOOST_MVP;
@@ -1208,6 +1209,9 @@ static inline unsigned int walt_cfs_mvp_task_limit(struct task_struct *p)
 	/* Binder MVP tasks are high prio but have only single slice */
 	if (wts->mvp_prio == WALT_BINDER_MVP)
 		return WALT_MVP_SLICE;
+
+	if (wts->mvp_prio == WALT_PIPELINE_MVP)
+		return 2 * WALT_MVP_LIMIT;
 
 	return WALT_MVP_LIMIT;
 }
@@ -1300,7 +1304,7 @@ static void walt_cfs_account_mvp_runtime(struct rq *rq, struct task_struct *curr
 		slice = 0;
 
 	/* slice is not expired */
-	if (slice < WALT_MVP_SLICE)
+	if (slice < ((wts->mvp_prio == WALT_PIPELINE_MVP) ? WALT_MVP_LIMIT : WALT_MVP_SLICE))
 		return;
 
 	wts->sum_exec_snapshot_for_slice = curr->se.sum_exec_runtime;
@@ -1441,7 +1445,8 @@ static void walt_cfs_check_preempt_wakeup(void *unused, struct rq *rq, struct ta
 	 */
 	skip_mvp = wrq->skip_mvp;
 	walt_cfs_account_mvp_runtime(rq, c);
-	resched = (skip_mvp != wrq->skip_mvp) || (wrq->mvp_tasks.next != &wts_c->mvp_list);
+	resched = (skip_mvp != wrq->skip_mvp) || (wrq->mvp_tasks.next != &wts_c->mvp_list) ||
+			(wts_p->mvp_prio > wts_c->mvp_prio);
 
 	/*
 	 * current is no longer eligible to run. It must have been

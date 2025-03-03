@@ -1225,7 +1225,8 @@ static inline bool walt_flag_test(struct task_struct *p, unsigned int feature)
 #define WALT_RTG_MVP		0
 #define WALT_BINDER_MVP		1
 #define WALT_TASK_BOOST_MVP	2
-#define WALT_LL_PIPE_MVP	3
+#define WALT_LL_MVP		3
+#define WALT_PIPELINE_MVP	4
 
 #define WALT_NOT_MVP		-1
 
