@@ -5,6 +5,10 @@ clk-dummy.ko
 clk-qcom.ko
 arm_smmu.ko
 qcom_iommu_util.ko
+qcom_dma_heaps.ko
+msm_dma_iommu_mapping.ko
+mem_buf.ko
+mem_buf_dev.ko
 smem.ko
 qcom_wdt_core.ko
 qcom_soc_wdt.ko
