@@ -119,6 +119,7 @@ obj-$(CONFIG_SM_CAMCC_6350) += camcc-sm6350.o
 obj-$(CONFIG_SM_CAMCC_8250) += camcc-sm8250.o
 obj-$(CONFIG_SM_CAMCC_8450) += camcc-sm8450.o
 obj-$(CONFIG_SM_DEBUGCC_4450) += debugcc-sm4450.o
+obj-$(CONFIG_SM_DEBUGCC_6150) += debugcc-sm6150.o
 obj-$(CONFIG_SM_DEBUGCC_PARROT) += debugcc-parrot.o
 obj-$(CONFIG_SM_DISPCC_4450) += dispcc-sm4450.o
 obj-$(CONFIG_SM_DISPCC_6115) += dispcc-sm6115.o
