@@ -123,6 +123,7 @@ obj-$(CONFIG_SM_DEBUGCC_PARROT) += debugcc-parrot.o
 obj-$(CONFIG_SM_DISPCC_4450) += dispcc-sm4450.o
 obj-$(CONFIG_SM_DISPCC_6115) += dispcc-sm6115.o
 obj-$(CONFIG_SM_DISPCC_6125) += dispcc-sm6125.o
+obj-$(CONFIG_SM_DISPCC_6150) += dispcc-sm6150.o
 obj-$(CONFIG_SM_DISPCC_6350) += dispcc-sm6350.o
 obj-$(CONFIG_SM_DISPCC_6375) += dispcc-sm6375.o
 obj-$(CONFIG_SM_DISPCC_8250) += dispcc-sm8250.o
