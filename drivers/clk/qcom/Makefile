@@ -114,6 +114,7 @@ obj-$(CONFIG_SDX_DEBUGCC_75) += debugcc-sdx75.o
 obj-$(CONFIG_SDX_GCC_75) += gcc-sdx75.o
 obj-$(CONFIG_SDX_GCC_BAAGHA) += gcc-sdxbaagha.o
 obj-$(CONFIG_SM_CAMCC_4450) += camcc-sm4450.o
+obj-$(CONFIG_SM_CAMCC_6150) += camcc-sm6150.o
 obj-$(CONFIG_SM_CAMCC_6350) += camcc-sm6350.o
 obj-$(CONFIG_SM_CAMCC_8250) += camcc-sm8250.o
 obj-$(CONFIG_SM_CAMCC_8450) += camcc-sm8450.o
