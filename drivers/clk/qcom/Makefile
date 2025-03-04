@@ -131,6 +131,7 @@ obj-$(CONFIG_SM_DISPCC_PARROT) += dispcc-parrot.o
 obj-$(CONFIG_SM_DISPCC_TUNA) += dispcc-tuna.o
 obj-$(CONFIG_SM_EVACC_TUNA) += evacc-tuna.o
 obj-$(CONFIG_SM_GCC_4450) += gcc-sm4450.o
+obj-$(CONFIG_SM_GCC_6150) += gcc-sm6150.o
 obj-$(CONFIG_SM_GCC_6115) += gcc-sm6115.o
 obj-$(CONFIG_SM_GCC_6125) += gcc-sm6125.o
 obj-$(CONFIG_SM_GCC_6350) += gcc-sm6350.o
