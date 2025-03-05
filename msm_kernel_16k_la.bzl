@@ -338,7 +338,7 @@ def _define_kernel_dist(
       define_abi_targets: boolean determining if ABI targets should be defined
     """
 
-    dist_dir = get_out_dir(msm_target, variant) + "/dist16k"
+    dist_dir = "out/msm-kernel-{}-{}16k/dist".format(msm_target.replace("_", "-"), variant.replace("-", "_"))
 
     msm_dist_targets = [base_kernel]
 
