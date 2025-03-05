@@ -16,3 +16,5 @@ iommu-logger.ko
 qcom-pdc.ko
 qcom_rpmh.ko
 cmd-db.ko
+proxy-consumer.ko
+rpmh-regulator.ko
