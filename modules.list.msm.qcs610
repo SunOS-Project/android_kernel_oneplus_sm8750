@@ -13,6 +13,10 @@ qcom_hwspinlock.ko
 secure_buffer.ko
 socinfo.ko
 iommu-logger.ko
+qcom_aoss.ko
+msm_qmp.ko
+qcom_ipc_logging.ko
+qrtr.ko
 qcom-pdc.ko
 qcom_rpmh.ko
 cmd-db.ko
