@@ -30,3 +30,8 @@ rpmh-regulator.ko
 gcc-sm6150.ko
 dispcc-sm6150.ko
 gpucc-sm6150.ko
+icc-rpmh.ko
+icc-bcm-voter.ko
+icc-debug.ko
+qnoc-qos.ko
+qnoc-sm6150.ko
