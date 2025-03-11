@@ -38,6 +38,10 @@ obj-y				+= xilinx/
 obj-$(CONFIG_OPLUS_FEATURE_MM_FEEDBACK)	+= oplus/multimedia/
 #endif /* OPLUS_FEATURE_MM_FEEDBACK */
 
+#ifdef OPLUS_TRACKPOINT_REPORT
+obj-$(CONFIG_OPLUS_TRACKPOINT_REPORT)	+= oplus/trackpoint/
+#endif /* OPLUS_TRACKPOINT_REPORT */
+
 #ifdef OPLUS_FEATURE_TP_BASIC
 obj-$(CONFIG_OPLUS_DEVICE_IFNO)  +=  oplus/device_info/
 #endif /* OPLUS_FEATURE_TP_BASIC */

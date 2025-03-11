@@ -50,6 +50,10 @@ source "drivers/soc/oplus/dfr/Kconfig"
 source "drivers/soc/oplus/multimedia/Kconfig"
 #endif /* OPLUS_FEATURE_MM_FEEDBACK */
 
+#ifdef OPLUS_TRACKPOINT_REPORT
+source "drivers/soc/oplus/trackpoint/Kconfig"
+#endif /* OPLUS_TRACKPOINT_REPORT */
+ 
 #ifdef OPLUS_FEATURE_BOOT
 source "drivers/soc/oplus/boot/Kconfig"
 #endif /* OPLUS_FEATURE_BOOT */
