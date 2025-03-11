@@ -57,11 +57,8 @@
 #include "touchpanel_healthinfo/touchpanel_exception.h"
 #define CREATE_TRACE_POINTS
 #include "touchpanel_healthinfo/touchpanel_stats.h"
-#ifdef BUILD_BY_BAZEL
-#include <soc/oplus/touchpanel_event_notify.h>/* kernel 6.1 */
-#else
-#include "../oplus_touchscreen_v2/touchpanel_notify/touchpanel_event_notify.h"
-#endif
+#include <soc/oplus/touchpanel_event_notify.h>
+#define EVENT_ACTION_UNDER_WATER   0x04
 #include "touchpanel_autotest/touchpanel_autotest.h"
 #include "touch_comon_api/touch_comon_api.h"
 
