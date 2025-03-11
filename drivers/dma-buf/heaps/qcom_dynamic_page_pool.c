@@ -21,6 +21,8 @@
 #include <linux/sched/signal.h>
 #include <uapi/linux/sched/types.h>
 
+#include "qcom_dynamic_page_pool.h"
+
 static LIST_HEAD(pool_list);
 static DEFINE_MUTEX(pool_list_lock);
 
