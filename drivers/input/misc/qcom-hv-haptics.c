@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/atomic.h>
@@ -1456,7 +1456,7 @@ static int haptics_check_hpwr_status(struct haptics_chip *chip)
 			 * Haptics VNDRV LDO has already been disabled when HPWR_DISABLED
 			 * status is set, delay 500us here to discharge the VNDRV voltage.
 			 */
-			if (val == HPWR_DISABLED) {
+			if ((val == HPWR_DISABLED) || (val == HPWR_READY)) {
 				usleep_range(500, 501);
 				break;
 			}
