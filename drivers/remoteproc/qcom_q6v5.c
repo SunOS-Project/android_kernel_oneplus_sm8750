@@ -251,16 +251,13 @@ static void qcom_q6v5_crash_handler_work(struct work_struct *work)
 #endif /* OPLUS_FEATURE_MODEM_MINIDUMP */
 
 	mutex_lock(&rproc->lock);
-
-	rproc->state = RPROC_CRASHED;
-
-	votes = atomic_xchg(&rproc->power, 0);
-	/* if votes are zero, rproc has already been shutdown */
-	if (votes == 0) {
+	votes = atomic_read(&rproc->power);
+	if (votes == 0 || q6v5->crash_seq != q6v5->seq) {
 		mutex_unlock(&rproc->lock);
 		return;
 	}
 
+	rproc->state = RPROC_CRASHED;
 	list_for_each_entry_reverse(subdev, &rproc->subdevs, node) {
 		if (subdev->stop)
 			subdev->stop(subdev, true);
@@ -311,6 +308,8 @@ static irqreturn_t q6v5_wdog_interrupt(int irq, void *data)
 		complete(&q6v5->stop_done);
 		return IRQ_HANDLED;
 	}
+
+        q6v5->crash_seq = q6v5->seq;
 
 	dev_err(q6v5->dev, "rproc crash at cycle:%llu, recovery state: %s\n",
 		get_cycles(),
@@ -405,6 +404,7 @@ static irqreturn_t q6v5_fatal_interrupt(int irq, void *data)
 		q6v5->rproc->recovery_disabled ? "disabled and lead to device crash" :
 		"enabled and kick recovery process");
 
+	q6v5->crash_seq = q6v5->seq;
 	msg = qcom_smem_get(QCOM_SMEM_HOST_ANY, q6v5->crash_reason, &len);
 	if (!IS_ERR(msg) && len > 0 && msg[0])
 		dev_err(q6v5->dev, "fatal error received: %s\n", msg);

@@ -3,7 +3,7 @@
  * drivers/mmc/host/sdhci-msm.c - Qualcomm SDHCI Platform driver
  *
  * Copyright (c) 2013-2014,2020. The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2024, 2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -413,7 +413,7 @@ struct mmc_gpio {
 	u32 cd_debounce_delay_ms;
 };
 
-static struct sdhci_msm_host *sdhci_slot[2];
+static struct sdhci_msm_host *sdhci_slot[3];
 
 static int sdhci_msm_update_qos_constraints(struct qos_cpu_group *qcg,
 					enum constraint type);
@@ -4982,7 +4982,7 @@ static void sdhci_msm_set_caps(struct sdhci_msm_host *msm_host)
 static int sdhci_msm_prepare_hibernation(struct sdhci_msm_host *msm_host)
 {
 	struct mmc_host *mhost = msm_host->mmc;
-	int ret = 0;
+	int ret = 0, irq = 0;
 
 	if (!mhost->card)
 		return ret;
@@ -5027,7 +5027,9 @@ out:
 
 	mmc_put_card(mhost->card, NULL);
 	/* Free cd-gpio IRQ before going into Hibernation */
-	devm_free_irq(mhost->parent, mhost->slot.cd_irq, mhost);
+	irq = mhost->slot.cd_irq;
+	if (irq >= 0)
+		devm_free_irq(mhost->parent, mhost->slot.cd_irq, mhost);
 
 	return ret;
 }
@@ -5036,7 +5038,7 @@ static int sdhci_msm_post_hibernation(struct sdhci_msm_host *msm_host)
 {
 	struct mmc_host *mhost = msm_host->mmc;
 	struct mmc_gpio *ctx = (struct mmc_gpio *) mhost->slot.handler_priv;
-	int irq, ret = 0;
+	int irq = 0, ret = 0;
 
 	if (!mhost->card)
 		return ret;
@@ -5363,6 +5365,8 @@ static int sdhci_msm_probe(struct platform_device *pdev)
 	struct sdhci_pltfm_host *pltfm_host;
 	struct sdhci_msm_host *msm_host;
 	int ret;
+	struct resource *tlmm_memres = NULL;
+	void __iomem *tlmm_mem;
 	u16 host_version, core_minor;
 	u32 core_version, config;
 	u8 core_major;
@@ -5474,6 +5478,18 @@ static int sdhci_msm_probe(struct platform_device *pdev)
 			ret = PTR_ERR(msm_host->core_mem);
 			goto vreg_deinit;
 		}
+	}
+	tlmm_memres = platform_get_resource_byname(pdev,
+			IORESOURCE_MEM, "tlmm_mem");
+	if (tlmm_memres) {
+		tlmm_mem = devm_ioremap(&pdev->dev, tlmm_memres->start,
+				resource_size(tlmm_memres));
+		if (!tlmm_mem) {
+			dev_err(&pdev->dev, "Failed to remap tlmm registers\n");
+			ret = -ENOMEM;
+			goto vreg_deinit;
+		}
+		writel_relaxed(readl_relaxed(tlmm_mem) | 0x2, tlmm_mem);
 	}
 
 	/* Reset the vendor spec register to power on reset state */
@@ -5593,13 +5609,16 @@ static int sdhci_msm_probe(struct platform_device *pdev)
 		register_trace_android_rvh_mmc_suspend(sdhci_msm_mmc_suspend, NULL);
 		register_trace_android_rvh_mmc_resume(sdhci_msm_mmc_resume, NULL);
 	}
-	msm_host->sdhci_msm_pm_notifier.notifier_call
-		= sdhci_msm_hibernation_notifier;
-	ret = register_pm_notifier(&msm_host->sdhci_msm_pm_notifier);
-	if (ret) {
-		dev_err(&pdev->dev, "%s: register pm notifier failed: %d\n",
-				__func__, ret);
-		goto pm_runtime_disable;
+	if ((host->mmc->caps2 & MMC_CAP2_NO_SDIO) &&
+			(host->mmc->caps2 & MMC_CAP2_NO_MMC)) {
+		msm_host->sdhci_msm_pm_notifier.notifier_call
+			= sdhci_msm_hibernation_notifier;
+		ret = register_pm_notifier(&msm_host->sdhci_msm_pm_notifier);
+		if (ret) {
+			dev_err(&pdev->dev, "%s: register pm notifier failed: %d\n",
+					__func__, ret);
+			goto pm_runtime_disable;
+		}
 	}
 
 	return 0;
@@ -5651,8 +5670,9 @@ static int sdhci_msm_remove(struct platform_device *pdev)
 
 	dead = (readl_relaxed(host->ioaddr + SDHCI_INT_STATUS) ==
 		    0xffffffff);
-
-	unregister_pm_notifier(&msm_host->sdhci_msm_pm_notifier);
+	if ((host->mmc->caps2 & MMC_CAP2_NO_SDIO) &&
+			(host->mmc->caps2 & MMC_CAP2_NO_MMC))
+		unregister_pm_notifier(&msm_host->sdhci_msm_pm_notifier);
 
 	sdhci_remove_host(host, dead);
 
@@ -5696,6 +5716,11 @@ static __maybe_unused int sdhci_msm_runtime_suspend(struct device *dev)
 	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(host);
 	struct sdhci_msm_host *msm_host = sdhci_pltfm_priv(pltfm_host);
 	struct sdhci_msm_qos_req *qos_req = msm_host->sdhci_qos;
+	unsigned long flags;
+
+	spin_lock_irqsave(&host->lock, flags);
+	host->runtime_suspended = true;
+	spin_unlock_irqrestore(&host->lock, flags);
 
 	sdhci_msm_log_str(msm_host, "Enter\n");
 	if (!qos_req)
@@ -5715,6 +5740,7 @@ static __maybe_unused int sdhci_msm_runtime_resume(struct device *dev)
 	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(host);
 	struct sdhci_msm_host *msm_host = sdhci_pltfm_priv(pltfm_host);
 	struct sdhci_msm_qos_req *qos_req = msm_host->sdhci_qos;
+	unsigned long flags;
 	int ret;
 
 	sdhci_msm_log_str(msm_host, "Enter\n");
@@ -5741,12 +5767,21 @@ static __maybe_unused int sdhci_msm_runtime_resume(struct device *dev)
 	}
 
 	if (!qos_req)
-		return 0;
+		goto skip_qos;
 
 	sdhci_msm_vote_pmqos(msm_host->mmc,
 			msm_host->sdhci_qos->active_mask);
 
-	return sdhci_msm_ice_resume(msm_host);
+skip_qos:
+	ret = sdhci_msm_ice_resume(msm_host);
+	if (ret)
+		return ret;
+
+	spin_lock_irqsave(&host->lock, flags);
+	host->runtime_suspended = false;
+	spin_unlock_irqrestore(&host->lock, flags);
+
+	return ret;
 }
 
 static int sdhci_msm_suspend_late(struct device *dev)

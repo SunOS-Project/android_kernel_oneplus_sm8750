@@ -17,6 +17,9 @@
 
 #include <dt-bindings/clock/qcom,rpmh.h>
 
+#include "clk-debug.h"
+#include "common.h"
+
 #define CLK_RPMH_ARC_EN_OFFSET		0
 #define CLK_RPMH_VRM_EN_OFFSET		4
 
@@ -707,6 +710,18 @@ static const struct clk_rpmh_desc clk_rpmh_lemans = {
 	.num_clks = ARRAY_SIZE(lemans_rpmh_clocks),
 };
 
+DEFINE_CLK_RPMH_ARC(neo, bi_tcxo, bi_tcxo_ao, "xo.lvl", 0x3, 1);
+
+static struct clk_hw *neo_rpmh_clocks[] = {
+	[RPMH_CXO_CLK]		= &neo_bi_tcxo.hw,
+	[RPMH_CXO_CLK_A]	= &neo_bi_tcxo_ao.hw,
+};
+
+static const struct clk_rpmh_desc clk_rpmh_neo = {
+	.clks = neo_rpmh_clocks,
+	.num_clks = ARRAY_SIZE(neo_rpmh_clocks),
+};
+
 DEFINE_CLK_RPMH_VRM(anorak, rf_clk1, rf_clk1_ao, "clka1", 1);
 DEFINE_CLK_RPMH_VRM(anorak, ln_bb_clk7, ln_bb_clk7_ao, "clka7", 2);
 DEFINE_CLK_RPMH_VRM(anorak, ln_bb_clk8, ln_bb_clk8_ao, "clka8", 4);
@@ -922,6 +937,21 @@ static const struct clk_rpmh_desc clk_rpmh_volcano = {
 	.num_clks = ARRAY_SIZE(volcano_rpmh_clocks),
 };
 
+static struct clk_hw *seraph_rpmh_clocks[] = {
+	[RPMH_CXO_PAD_CLK]	= &pineapple_xo_pad.hw,
+	[RPMH_CXO_PAD_CLK_A]	= &pineapple_xo_pad_ao.hw,
+	[RPMH_CXO_CLK]		= &pineapple_bi_tcxo.hw,
+	[RPMH_CXO_CLK_A]	= &pineapple_bi_tcxo_ao.hw,
+	[RPMH_RF_CLK1]		= &pineapple_rf_clk1.hw,
+	[RPMH_RF_CLK1_A]	= &pineapple_rf_clk1_ao.hw,
+	[RPMH_IPA_CLK]		= &sdm845_ipa.hw,
+};
+
+static const struct clk_rpmh_desc clk_rpmh_seraph = {
+	.clks = seraph_rpmh_clocks,
+	.num_clks = ARRAY_SIZE(seraph_rpmh_clocks),
+};
+
 static int clk_rpmh_probe(struct platform_device *pdev)
 {
 	struct clk_hw **hw_clks;
@@ -981,6 +1011,11 @@ static int clk_rpmh_probe(struct platform_device *pdev)
 			dev_err(&pdev->dev, "failed to register %s\n", name);
 			return ret;
 		}
+
+		ret = clk_hw_debug_register(&pdev->dev, hw_clks[i]);
+		if (ret)
+			dev_warn(&pdev->dev, "Failed to add %s to debug list\n",
+						qcom_clk_hw_get_name(hw_clks[i]));
 	}
 
 	/* typecast to silence compiler warning */
@@ -1018,6 +1053,8 @@ static const struct of_device_id clk_rpmh_match_table[] = {
 	{ .compatible = "qcom,niobe-rpmh-clk", .data = &clk_rpmh_niobe},
 	{ .compatible = "qcom,volcano-rpmh-clk", .data = &clk_rpmh_volcano},
 	{ .compatible = "qcom,anorak-rpmh-clk", .data = &clk_rpmh_anorak},
+	{ .compatible = "qcom,neo-rpmh-clk", .data = &clk_rpmh_neo},
+	{ .compatible = "qcom,seraph-rpmh-clk", .data = &clk_rpmh_seraph},
 	{ }
 };
 MODULE_DEVICE_TABLE(of, clk_rpmh_match_table);

@@ -1,6 +1,6 @@
-load(":target_variants.bzl", "la_variants")
-load(":msm_kernel_la.bzl", "define_msm_la")
 load(":image_opts.bzl", "boot_image_opts")
+load(":msm_kernel_la.bzl", "define_msm_la")
+load(":target_variants.bzl", "la_variants")
 
 target_name = "niobe"
 
@@ -78,6 +78,7 @@ def define_niobe():
         "drivers/mailbox/msm_qmp.ko",
         "drivers/mailbox/qcom-ipcc.ko",
         "drivers/mfd/qcom-spmi-pmic.ko",
+        "drivers/misc/kxrctrl/aphost.ko",
         "drivers/mmc/host/cqhci.ko",
         "drivers/mmc/host/sdhci-msm.ko",
         "drivers/nvme/host/sdexpress.ko",
@@ -87,7 +88,7 @@ def define_niobe():
         "drivers/perf/qcom_llcc_pmu.ko",
         "drivers/phy/qualcomm/phy-qcom-ufs.ko",
         "drivers/phy/qualcomm/phy-qcom-ufs-qmp-v4.ko",
-        "drivers/phy/qualcomm/phy-qcom-ufs-qmp-v4-pineapple.ko",
+        "drivers/phy/qualcomm/phy-qcom-ufs-qmp-v4-niobe.ko",
         "drivers/phy/qualcomm/phy-qcom-ufs-qrbtc-sdm845.ko",
         "drivers/pinctrl/qcom/pinctrl-msm.ko",
         "drivers/pinctrl/qcom/pinctrl-niobe.ko",
@@ -98,7 +99,8 @@ def define_niobe():
         "drivers/power/reset/qcom-reboot-reason.ko",
         "drivers/power/reset/reboot-mode.ko",
         "drivers/power/supply/qti_battery_charger.ko",
-        "drivers/powercap/qti_epm_hardware.ko",
+        "drivers/powercap/qcom_power_telemetry.ko",
+        "drivers/pwm/pwm-qcom.ko",
         "drivers/pwm/pwm-qti-lpg.ko",
         "drivers/regulator/ap72200-regulator.ko",
         "drivers/regulator/debug-regulator.ko",
@@ -135,10 +137,13 @@ def define_niobe():
         "drivers/soc/qcom/dcvs/c1dcvs_scmi_v2.ko",
         "drivers/soc/qcom/dcvs/cpufreq_stats_scmi_v2.ko",
         "drivers/soc/qcom/dcvs/dcvs_fp.ko",
+        "drivers/soc/qcom/dcvs/llcc_miss.ko",
+        "drivers/soc/qcom/dcvs/llcc_occ.ko",
         "drivers/soc/qcom/dcvs/memlat.ko",
         "drivers/soc/qcom/dcvs/qcom-dcvs.ko",
         "drivers/soc/qcom/dcvs/qcom-pmu-lib.ko",
         "drivers/soc/qcom/dcvs/qcom_scmi_client.ko",
+        "drivers/soc/qcom/dcvs/trace-bus-prof.ko",
         "drivers/soc/qcom/debug_symbol.ko",
         "drivers/soc/qcom/dmesg_dumper.ko",
         "drivers/soc/qcom/eud.ko",
@@ -146,8 +151,10 @@ def define_niobe():
         "drivers/soc/qcom/gh_tlmm_vm_mem_access.ko",
         "drivers/soc/qcom/gic_intr_routing.ko",
         "drivers/soc/qcom/glink_probe.ko",
+        "drivers/soc/qcom/hung_task_enh.ko",
         "drivers/soc/qcom/hwkm.ko",
         "drivers/soc/qcom/llcc-qcom.ko",
+        "drivers/soc/qcom/llcc_perfmon.ko",
         "drivers/soc/qcom/mdt_loader.ko",
         "drivers/soc/qcom/mem_buf/mem_buf.ko",
         "drivers/soc/qcom/mem_buf/mem_buf_dev.ko",

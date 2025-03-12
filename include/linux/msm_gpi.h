@@ -254,6 +254,12 @@ enum msm_gpi_ctrl_cmd {
 	MSM_GPI_DEEP_SLEEP_INIT,
 };
 
+enum Q2SPI_CR_HEADER_CODE {
+	Q2SPI_CR_CODE_SUCCESS = 0x1,
+	Q2SPI_CR_HEADER_LEN_ZERO = 0xB,
+	Q2SPI_CR_HEADER_INCORRECT = 0xC,
+};
+
 enum msm_gpi_cb_event {
 	/* These events are hardware generated events */
 	MSM_GPI_QUP_NOTIFY,
@@ -408,6 +414,14 @@ struct gsi_common {
 void gpi_dump_for_geni(struct dma_chan *chan);
 
 /**
+ * gpi_q2spi_terminate_all() - function to stop and restart the channels
+ * @chan: gsi dma channel handle
+ *
+ * Return: Returns success or failure
+ */
+int gpi_q2spi_terminate_all(struct dma_chan *chan);
+
+/**
  * gpi_update_multi_desc_flag() - update multi descriptor flag and num of msgs for
  *				   multi descriptor mode handling.
  * @chan: Base address of dma channel
@@ -455,6 +469,14 @@ int gsi_common_tx_tre_optimization(struct gsi_common *gsi, u32 num_xfers, u32 nu
  * Return: Returns success or failure
  */
 int geni_gsi_ch_start(struct dma_chan *chan);
+
+/**
+ * geni_gsi_connect_doorbell() - function to connect gsi doorbell
+ * @chan: dma channel handle
+ *
+ * Return: Returns success or failure
+ */
+int geni_gsi_connect_doorbell(struct dma_chan *chan);
 
 /**
  * geni_gsi_disconnect_doorbell_stop_ch() - function to disconnect gsi doorbell and stop channel

@@ -53,6 +53,8 @@ enum core_ldo_levels {
 #define SW_PORTSELECT		BIT(0)
 /* port select mux: 1 - sw control. 0 - HW control*/
 #define SW_PORTSELECT_MX	BIT(1)
+/* port select polarity: 1 - invert polarity of portselect from gpio */
+#define PORTSELECT_POLARITY	BIT(2)
 
 /* USB3_DP_PHY_USB3_DP_COM_SWI_CTRL bits */
 
@@ -150,6 +152,7 @@ struct msm_ssphy_qmp {
 	int			reg_offset_cnt;
 	u32			*qmp_phy_init_seq;
 	int			init_seq_len;
+	bool			invert_ps_polarity;
 	enum qmp_phy_type	phy_type;
 };
 
@@ -455,6 +458,14 @@ static void usb_qmp_update_portselect_phymode(struct msm_ssphy_qmp *phy)
 
 	switch (phy->phy_type) {
 	case USB3_AND_DP:
+		/*
+		 * if port select inversion is enabled, enable it only for the input to the PHY.
+		 * The lane selection based on PHY flags will not get affected.
+		 */
+		if (val < 0 && phy->invert_ps_polarity)
+			writel_relaxed(PORTSELECT_POLARITY,
+				phy->base + phy->phy_reg[USB3_DP_COM_TYPEC_CTRL]);
+
 		writel_relaxed(0x01,
 			phy->base + phy->phy_reg[USB3_DP_COM_SW_RESET]);
 		writel_relaxed(0x00,
@@ -850,12 +861,19 @@ static int msm_ssphy_qmp_notify_disconnect(struct usb_phy *uphy,
 {
 	struct msm_ssphy_qmp *phy = container_of(uphy, struct msm_ssphy_qmp,
 					phy);
+	bool clk_enabled = phy->clk_enabled;
 
 	atomic_notifier_call_chain(&uphy->notifier, 0, uphy);
 	if (phy->phy.flags & PHY_HOST_MODE) {
+		if (!clk_enabled)
+			msm_ssphy_qmp_enable_clks(phy, true);
+
 		writel_relaxed(0x00,
 			phy->base + phy->phy_reg[USB3_PHY_POWER_DOWN_CONTROL]);
 		readl_relaxed(phy->base + phy->phy_reg[USB3_PHY_POWER_DOWN_CONTROL]);
+
+		if (!clk_enabled)
+			msm_ssphy_qmp_enable_clks(phy, false);
 	}
 
 	dev_dbg(uphy->dev, "QMP phy disconnect notification\n");
@@ -1212,7 +1230,8 @@ static int msm_ssphy_qmp_probe(struct platform_device *pdev)
 				&phy->vdd_max_uA) || !phy->vdd_max_uA)
 		phy->vdd_max_uA = USB_SSPHY_HPM_LOAD;
 
-	platform_set_drvdata(pdev, phy);
+	phy->invert_ps_polarity = of_property_read_bool(dev->of_node,
+					"qcom,invert-ps-polarity");
 
 	phy->phy.dev			= dev;
 	phy->phy.init			= msm_ssphy_qmp_init;
@@ -1220,10 +1239,13 @@ static int msm_ssphy_qmp_probe(struct platform_device *pdev)
 	phy->phy.notify_connect		= msm_ssphy_qmp_notify_connect;
 	phy->phy.notify_disconnect	= msm_ssphy_qmp_notify_disconnect;
 
-	ret = usb_add_phy_dev(&phy->phy);
 	ret = usb3_get_regulators(phy);
 	if (ret)
 		goto err;
+
+	/* Placed at the end to ensure the probe is complete */
+	ret = usb_add_phy_dev(&phy->phy);
+
 err:
 	return ret;
 }

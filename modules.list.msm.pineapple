@@ -7,6 +7,7 @@ qcom_scmi_client.ko
 cmd-db.ko
 qcom_rpmh.ko
 qcom-pdc.ko
+nvmem_qfprom.ko
 thermal_minidump.ko
 qcom_tsens.ko
 qcom_iommu_util.ko
@@ -109,6 +110,7 @@ sdhci-msm.ko
 cqhci.ko
 crm.ko
 bcl_pmic5.ko
+qcom-dload-mode.ko
 sched-penalty.ko
 test-kit.ko
 oplus_bsp_cpufreq_health.ko
@@ -120,7 +122,6 @@ oplus_charger_present.ko
 oplus_bsp_boot_projectinfo.ko
 boot_mode.ko
 bootloader_log.ko
-tango32.ko
 oplus_bsp_dfr_kmsg_wb.ko
 oplus_bsp_dfr_reboot_speed.ko
 oplus_bsp_dfr_phoenix.ko

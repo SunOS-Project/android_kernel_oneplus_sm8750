@@ -1,6 +1,6 @@
-load(":target_variants.bzl", "la_variants")
-load(":msm_kernel_la.bzl", "define_msm_la")
 load(":image_opts.bzl", "boot_image_opts")
+load(":msm_kernel_la.bzl", "define_msm_la")
+load(":target_variants.bzl", "la_variants")
 
 target_name = "sdmsteppeauto"
 
@@ -25,6 +25,7 @@ def define_sdmsteppeauto():
         "drivers/cpufreq/qcom-cpufreq-hw.ko",
         "drivers/cpuidle/governors/qcom_lpm.ko",
         "drivers/dma-buf/heaps/qcom_dma_heaps.ko",
+        "drivers/dma/qcom/msm_gpi.ko",
         "drivers/extcon/extcon-usb-gpio.ko",
         "drivers/firmware/qcom-scm.ko",
         "drivers/gpu/drm/bridge/analogix/anx7625.ko",
@@ -72,10 +73,17 @@ def define_sdmsteppeauto():
         "drivers/irqchip/qcom-pdc.ko",
         "drivers/mailbox/msm_qmp.ko",
         "drivers/mailbox/qcom-apcs-ipc-mailbox.ko",
+        "drivers/md/dm-bow.ko",
         "drivers/mfd/qcom-spmi-pmic.ko",
+        "drivers/misc/bootmarker_proxy.ko",
         "drivers/misc/qseecom_proxy.ko",
         "drivers/mmc/host/cqhci.ko",
         "drivers/mmc/host/sdhci-msm.ko",
+        "drivers/net/ethernet/stmicro/stmmac/dwmac-qcom-eth.ko",
+        "drivers/net/ethernet/stmicro/stmmac/stmmac.ko",
+        "drivers/net/ethernet/stmicro/stmmac/stmmac-platform.ko",
+        "drivers/net/pcs/pcs_xpcs.ko",
+        "drivers/net/phy/micrel.ko",
         "drivers/nvmem/nvmem_qcom-spmi-sdam.ko",
         "drivers/nvmem/nvmem_qfprom.ko",
         "drivers/pci/controller/pci-msm-drv.ko",

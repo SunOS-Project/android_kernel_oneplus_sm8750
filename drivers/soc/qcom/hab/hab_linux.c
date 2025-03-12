@@ -179,6 +179,14 @@ static long hab_copy_data(struct hab_message *msg, struct hab_recv *recv_param)
 	return ret;
 }
 
+static inline long hab_check_cmd(unsigned int cmd, unsigned int data_size)
+{
+	if (!_IOC_SIZE(cmd) || !(cmd & IOC_INOUT) || (_IOC_SIZE(cmd) > data_size))
+		return -EINVAL;
+
+	return 0;
+}
+
 static long hab_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 {
 	struct uhab_context *ctx = (struct uhab_context *)filep->private_data;
@@ -194,15 +202,15 @@ static long hab_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 	char names[30] = { 0 };
 	int mmid_grp_index = ctx->mmid_grp_index;
 
-	if (_IOC_SIZE(cmd) && (cmd & IOC_IN)) {
-		if (_IOC_SIZE(cmd) > sizeof(data))
-			return -EINVAL;
+	ret = hab_check_cmd(cmd, sizeof(data));
+	if (ret)
+		return ret;
 
-		if (copy_from_user(data, (void __user *)arg, _IOC_SIZE(cmd))) {
-			pr_err("copy_from_user failed cmd=%x size=%d\n",
-				cmd, _IOC_SIZE(cmd));
-			return -EFAULT;
-		}
+	if ((cmd & IOC_IN) &&
+	    (copy_from_user(data, (void __user *)arg, _IOC_SIZE(cmd)))) {
+		pr_err("copy_from_user failed cmd=%x size=%d\n",
+			cmd, _IOC_SIZE(cmd));
+		return -EFAULT;
 	}
 
 	switch (cmd) {
@@ -316,11 +324,12 @@ static long hab_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 		ret = -ENOIOCTLCMD;
 	}
 
-	if (_IOC_SIZE(cmd) && (cmd & IOC_OUT))
-		if (copy_to_user((void __user *) arg, data, _IOC_SIZE(cmd))) {
-			pr_err("copy_to_user failed: cmd=%x\n", cmd);
-			ret = -EFAULT;
-		}
+	if ((ret != -ENOIOCTLCMD) &&
+	    (cmd & IOC_OUT) &&
+	    (copy_to_user((void __user *) arg, data, _IOC_SIZE(cmd)))) {
+		pr_err("copy_to_user failed: cmd=%x\n", cmd);
+		ret = -EFAULT;
+	}
 
 	return ret;
 }
@@ -412,6 +421,64 @@ static void reclaim_cleanup(struct work_struct *reclaim_work)
 		pr_info("cleanup exp id %u from %s\n", exp->export_id, pchan->name);
 		habmem_export_put(exp_super);
 	}
+}
+
+void hab_rb_init(struct rb_root *root)
+{
+	*root = RB_ROOT;
+}
+
+struct export_desc_super *hab_rb_exp_find(struct rb_root *root, struct export_desc_super *key)
+{
+	struct rb_node *node = root->rb_node;
+	struct export_desc_super *exp_super;
+
+	while (node) {
+		exp_super = rb_entry(node, struct export_desc_super, node);
+		if (key->exp.export_id < exp_super->exp.export_id)
+			node = node->rb_left;
+		else if (key->exp.export_id > exp_super->exp.export_id)
+			node = node->rb_right;
+		else {
+			if (key->exp.pchan < exp_super->exp.pchan)
+				node = node->rb_left;
+			else if (key->exp.pchan > exp_super->exp.pchan)
+				node = node->rb_right;
+			else
+				return exp_super;
+		}
+	}
+
+	return NULL;
+}
+
+struct export_desc_super *hab_rb_exp_insert(struct rb_root *root, struct export_desc_super *exp_s)
+{
+	struct rb_node **new = &(root->rb_node), *parent = NULL;
+
+	while (*new) {
+		struct export_desc_super *this = rb_entry(*new, struct export_desc_super, node);
+
+		parent = *new;
+		if (exp_s->exp.export_id < this->exp.export_id)
+			new = &((*new)->rb_left);
+		else if (exp_s->exp.export_id > this->exp.export_id)
+			new = &((*new)->rb_right);
+		else {
+			if (exp_s->exp.pchan < this->exp.pchan)
+				new = &((*new)->rb_left);
+			else if (exp_s->exp.pchan > this->exp.pchan)
+				new = &((*new)->rb_right);
+			else
+				/* should not found the target key before insert */
+				return this;
+		}
+	}
+
+	rb_link_node(&exp_s->node, parent, new);
+	rb_insert_color(&exp_s->node, root);
+
+	return NULL;
 }
 
 /* create one more char device for /dev/hab */

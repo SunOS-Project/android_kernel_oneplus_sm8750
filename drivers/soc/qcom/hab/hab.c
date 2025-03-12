@@ -80,7 +80,7 @@ struct uhab_context *hab_ctx_alloc(int kernel)
 	ctx->closing = 0;
 	INIT_LIST_HEAD(&ctx->vchannels);
 	INIT_LIST_HEAD(&ctx->exp_whse);
-	INIT_LIST_HEAD(&ctx->imp_whse);
+	hab_rb_init(&ctx->imp_whse);
 
 	INIT_LIST_HEAD(&ctx->exp_rxq);
 	init_waitqueue_head(&ctx->exp_wq);
@@ -143,8 +143,8 @@ void hab_ctx_free_fn(struct uhab_context *ctx)
 		list_del(&exp->node);
 		exp_super = container_of(exp, struct export_desc_super, exp);
 		if ((exp_super->remote_imported != 0) && (exp->pchan->mem_proto == 1)) {
-			pr_warn("exp id %d still imported on remote side on pchan %s\n",
-				exp->export_id, exp->pchan->name);
+			pr_warn("exp id %d still imported on remote side on %s, pcnt %d\n",
+				exp->export_id, exp->pchan->name, exp->payload_count);
 			hab_spin_lock(&hab_driver.reclaim_lock, irqs_disabled);
 			list_add_tail(&exp->node, &hab_driver.reclaim_list);
 			hab_spin_unlock(&hab_driver.reclaim_lock, irqs_disabled);
@@ -167,8 +167,11 @@ void hab_ctx_free_fn(struct uhab_context *ctx)
 	write_unlock(&ctx->exp_lock);
 
 	spin_lock_bh(&ctx->imp_lock);
-	list_for_each_entry_safe(exp, exp_tmp, &ctx->imp_whse, node) {
-		list_del(&exp->node);
+	for (exp_super = hab_rb_min(&ctx->imp_whse, struct export_desc_super, node);
+	     exp_super != NULL;
+	     exp_super = hab_rb_min(&ctx->imp_whse, struct export_desc_super, node)) {
+		exp = &exp_super->exp;
+		hab_rb_remove(&ctx->imp_whse, exp_super);
 		ctx->import_total--;
 		pr_debug("leaked imp %d vcid %X for ctx is collected total %d\n",
 			exp->export_id, exp->vcid_local,
@@ -188,8 +191,8 @@ void hab_ctx_free_fn(struct uhab_context *ctx)
 					pr_err("failed to send unimp msg %d, vcid %d, exp id %d\n",
 						ret, exp->vcid_local, exp->export_id);
 			} else
-				pr_err("exp id %d unmap fail on vcid %X\n",
-					exp->export_id, exp->vcid_local);
+				pr_err("exp id %d pcnt %d unmap fail on vcid %X\n",
+					exp->export_id, exp->payload_count, exp->vcid_local);
 		}
 		exp_super = container_of(exp, struct export_desc_super, exp);
 		kfree(exp_super);

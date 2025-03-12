@@ -558,6 +558,7 @@ static irqreturn_t tcs_tx_done(int irq, void *p)
 	int i, ch;
 	unsigned long irq_status;
 	const struct tcs_request *req;
+	u32 enable;
 
 	irq_status = readl_relaxed(drv->tcs_base + drv->regs[RSC_DRV_IRQ_STATUS]);
 
@@ -582,6 +583,12 @@ skip:
 		write_tcs_reg(drv, drv->regs[RSC_DRV_CMD_ENABLE], i, 0);
 		write_tcs_reg(drv, drv->regs[RSC_DRV_CMD_WAIT_FOR_CMPL], i, 0);
 		writel_relaxed(BIT(i), drv->tcs_base + drv->regs[RSC_DRV_IRQ_CLEAR]);
+
+		/* Clear the AMC MODE Trigger */
+		enable = read_tcs_reg(drv, drv->regs[RSC_DRV_CONTROL], i);
+		enable &= ~TCS_AMC_MODE_TRIGGER;
+		write_tcs_reg(drv, drv->regs[RSC_DRV_CONTROL], i, enable);
+
 		spin_lock(&drv->lock);
 		clear_bit(i, drv->tcs_in_use);
 		/*
@@ -1495,7 +1502,7 @@ const struct device *rpmh_rsc_get_device(const char *name, u32 drv_id)
 	struct rsc_drv_top *rsc_top = rpmh_rsc_get_top_device(name);
 	int i;
 
-	if (IS_ERR(rsc_top))
+	if (IS_ERR(rsc_top) || strcmp(name, "cam_rsc"))
 		return ERR_PTR(-ENODEV);
 
 	for (i = 0; i < rsc_top->drv_count; i++) {
@@ -1748,6 +1755,10 @@ static int rpmh_rsc_probe(struct platform_device *pdev)
 					      drv[i].regs[DRV_SOLVER_CONFIG]);
 		solver_config &= DRV_HW_SOLVER_MASK << DRV_HW_SOLVER_SHIFT;
 		solver_config = solver_config >> DRV_HW_SOLVER_SHIFT;
+
+		spin_lock_init(&drv[i].lock);
+		spin_lock_init(&drv[i].client.cache_lock);
+
 		if (of_find_property(dn, "power-domains", NULL)) {
 			ret = rpmh_rsc_pd_attach(&drv[i]);
 			if (ret)
@@ -1772,7 +1783,6 @@ static int rpmh_rsc_probe(struct platform_device *pdev)
 			drv[i].regs = rpmh_rsc_reg_offsets_ver_3_0_hw_channel;
 		}
 
-		spin_lock_init(&drv[i].lock);
 		init_waitqueue_head(&drv[i].tcs_wait);
 		bitmap_zero(drv[i].tcs_in_use, MAX_TCS_NR);
 		drv[i].client.non_batch_cache = devm_kcalloc(&pdev->dev, CMD_DB_MAX_RESOURCES,
@@ -1794,8 +1804,6 @@ static int rpmh_rsc_probe(struct platform_device *pdev)
 				       drv[i].name, &drv[i]);
 		if (ret)
 			return ret;
-
-		spin_lock_init(&drv[i].client.cache_lock);
 
 		drv[i].ipc_log_ctx = ipc_log_context_create(
 						RSC_DRV_IPC_LOG_SIZE,

@@ -1,6 +1,6 @@
-load(":target_variants.bzl", "la_variants")
-load(":msm_kernel_la.bzl", "define_msm_la")
 load(":image_opts.bzl", "boot_image_opts")
+load(":msm_kernel_la.bzl", "define_msm_la")
+load(":target_variants.bzl", "la_variants")
 
 target_name = "autoghgvm"
 
@@ -14,8 +14,10 @@ def define_autoghgvm():
         "drivers/clk/qcom/clk-dummy.ko",
         "drivers/clk/qcom/clk-qcom.ko",
         "drivers/dma-buf/heaps/qcom_dma_heaps.ko",
+        "drivers/firmware/arm_scmi/scmi_perf_domain.ko",
+        "drivers/firmware/arm_scmi/scmi_pm_domain.ko",
         "drivers/firmware/qcom-scm.ko",
-        "drivers/i2c/busses/i2c-msm-geni.ko",
+        "drivers/i2c/busses/i2c-qcom-geni-msm.ko",
         "drivers/i2c/busses/i2c-virtio.ko",
         "drivers/iommu/arm/arm-smmu/arm_smmu.ko",
         "drivers/iommu/iommu-logger.ko",
@@ -24,6 +26,7 @@ def define_autoghgvm():
         "drivers/mailbox/qcom-ipcc.ko",
         "drivers/net/net_failover.ko",
         "drivers/net/virtio_net.ko",
+        "drivers/pci/controller/pcie-qcom-ecam.ko",
         "drivers/pinctrl/qcom/pinctrl-lemans.ko",
         "drivers/pinctrl/qcom/pinctrl-monaco_auto.ko",
         "drivers/pinctrl/qcom/pinctrl-msm.ko",
@@ -38,17 +41,19 @@ def define_autoghgvm():
         "drivers/soc/qcom/mem_buf/mem_buf.ko",
         "drivers/soc/qcom/mem_buf/mem_buf_dev.ko",
         "drivers/soc/qcom/minidump.ko",
+        "drivers/soc/qcom/qcom-geni-se-msm.ko",
         "drivers/soc/qcom/qcom_logbuf_boot_log.ko",
+        "drivers/soc/qcom/qcom_logbuf_vendor_hooks.ko",
         "drivers/soc/qcom/qcom_wdt_core.ko",
         "drivers/soc/qcom/qmi_helpers.ko",
         "drivers/soc/qcom/rename_devices.ko",
         "drivers/soc/qcom/rq_stats.ko",
         "drivers/soc/qcom/secure_buffer.ko",
         "drivers/soc/qcom/smem.ko",
-        "drivers/spi/spi-msm-geni.ko",
+        "drivers/spi/spi-geni-qcom-msm.ko",
         "drivers/spi/spidev.ko",
         "drivers/tty/hvc/hvc_gunyah.ko",
-        "drivers/tty/serial/msm_geni_serial.ko",
+        "drivers/tty/serial/qcom_geni_serial_msm.ko",
         "drivers/virt/gunyah/gh_ctrl.ko",
         "drivers/virt/gunyah/gh_dbl.ko",
         "drivers/virt/gunyah/gh_msgq.ko",
@@ -60,6 +65,8 @@ def define_autoghgvm():
         "net/core/failover.ko",
         "net/qrtr/qrtr.ko",
         "net/qrtr/qrtr-mhi.ko",
+        "net/vmw_vsock/vmw_vsock_virtio_transport.ko",
+        "net/wireless/cfg80211.ko",
     ]
 
     _autoghgvm_consolidate_in_tree_modules = _autoghgvm_in_tree_modules + [

@@ -1192,6 +1192,7 @@ struct msm_pcie_dev_t {
 	bool linkdown_recovery_enable;
 	bool gdsc_clk_drv_ss_nonvotable;
 	bool pcie_bdf_halt_dis;
+	uint32_t device_vendor_id;
 
 	uint32_t pcie_parf_cesta_config;
 
@@ -1284,6 +1285,8 @@ struct msm_pcie_dev_t {
 #if IS_ENABLED(CONFIG_I2C)
 	struct pcie_i2c_ctrl i2c_ctrl;
 #endif
+
+	bool fmd_enable;
 };
 
 struct msm_root_dev_t {
@@ -1595,6 +1598,55 @@ int msm_pcie_reg_dump(struct pci_dev *pci_dev, u8 *buff, u32 len)
 	return 0;
 }
 EXPORT_SYMBOL(msm_pcie_reg_dump);
+
+static void msm_pcie_config_perst(struct msm_pcie_dev_t *dev, bool assert)
+{
+	if (dev->fmd_enable) {
+		pr_err("PCIe: FMD is enabled for RC%d\n", dev->rc_idx);
+		return;
+	}
+
+	if (assert) {
+		PCIE_INFO(dev, "PCIe: RC%d: assert PERST\n",
+			    dev->rc_idx);
+		gpio_set_value(dev->gpio[MSM_PCIE_GPIO_PERST].num,
+				    dev->gpio[MSM_PCIE_GPIO_PERST].on);
+	} else {
+		PCIE_INFO(dev, "PCIe: RC%d: de-assert PERST\n",
+			    dev->rc_idx);
+		gpio_set_value(dev->gpio[MSM_PCIE_GPIO_PERST].num,
+					1 - dev->gpio[MSM_PCIE_GPIO_PERST].on);
+	}
+}
+
+int msm_pcie_fmd_enable(struct pci_dev *pci_dev)
+{
+	struct pci_dev *root_pci_dev;
+	struct msm_pcie_dev_t *pcie_dev;
+
+	root_pci_dev = pcie_find_root_port(pci_dev);
+	if (!root_pci_dev)
+		return -ENODEV;
+
+	pcie_dev = PCIE_BUS_PRIV_DATA(root_pci_dev->bus);
+	if (!pcie_dev) {
+		pr_err("PCIe: did not find RC for pci endpoint device.\n");
+		return -ENODEV;
+	}
+
+	PCIE_INFO(pcie_dev, "RC%d Enable FMD\n", pcie_dev->rc_idx);
+	if (pcie_dev->fmd_enable) {
+		pr_err("PCIe: FMD is already enabled for RC%d\n", pcie_dev->rc_idx);
+		return 0;
+	}
+
+	if (!gpio_get_value(pcie_dev->gpio[MSM_PCIE_GPIO_PERST].num))
+		msm_pcie_config_perst(pcie_dev, false);
+
+	pcie_dev->fmd_enable = true;
+	return 0;
+}
+EXPORT_SYMBOL_GPL(msm_pcie_fmd_enable);
 
 static void msm_pcie_write_reg(void __iomem *base, u32 offset, u32 value)
 {
@@ -2432,15 +2484,13 @@ static void msm_pcie_sel_debug_testcase(struct msm_pcie_dev_t *dev,
 	case MSM_PCIE_ASSERT_PERST:
 		PCIE_DBG_FS(dev, "\n\nPCIe: RC%d: assert PERST\n\n",
 			dev->rc_idx);
-		gpio_set_value(dev->gpio[MSM_PCIE_GPIO_PERST].num,
-					dev->gpio[MSM_PCIE_GPIO_PERST].on);
+		msm_pcie_config_perst(dev, true);
 		usleep_range(dev->perst_delay_us_min, dev->perst_delay_us_max);
 		break;
 	case MSM_PCIE_DEASSERT_PERST:
 		PCIE_DBG_FS(dev, "\n\nPCIe: RC%d: de-assert PERST\n\n",
 			dev->rc_idx);
-		gpio_set_value(dev->gpio[MSM_PCIE_GPIO_PERST].num,
-					1 - dev->gpio[MSM_PCIE_GPIO_PERST].on);
+		msm_pcie_config_perst(dev, false);
 		usleep_range(dev->perst_delay_us_min, dev->perst_delay_us_max);
 		break;
 	case MSM_PCIE_KEEP_RESOURCES_ON:
@@ -5764,8 +5814,7 @@ static int msm_pcie_link_train(struct msm_pcie_dev_t *dev)
 #endif
 		PCIE_INFO(dev, "PCIe: Assert the reset of endpoint of RC%d.\n",
 			dev->rc_idx);
-		gpio_set_value(dev->gpio[MSM_PCIE_GPIO_PERST].num,
-			dev->gpio[MSM_PCIE_GPIO_PERST].on);
+		msm_pcie_config_perst(dev, true);
 		PCIE_ERR(dev, "PCIe RC%d link initialization failed\n",
 			dev->rc_idx);
 		return MSM_PCIE_ERROR;
@@ -6167,12 +6216,18 @@ static int msm_pcie_enable_link(struct msm_pcie_dev_t *dev)
 	msm_pcie_write_mask(dev->parf + PCIE20_PARF_CFG_BITS_3, 0, BIT(8));
 	msm_pcie_write_mask(dev->dm_core + PCIE20_LANE_SKEW_OFF, 0, BIT(5));
 
+	/* override the vendor id */
+	if (dev->device_vendor_id) {
+		msm_pcie_write_mask(dev->dm_core + PCIE_GEN3_MISC_CONTROL, 1, BIT(0));
+		msm_pcie_write_reg(dev->dm_core, 0x0, dev->device_vendor_id);
+		msm_pcie_write_mask(dev->dm_core + PCIE_GEN3_MISC_CONTROL, 0, BIT(0));
+	}
+
 	/* de-assert PCIe reset link to bring EP out of reset */
 
 	PCIE_INFO(dev, "PCIe: Release the reset of endpoint of RC%d.\n",
 		dev->rc_idx);
-	gpio_set_value(dev->gpio[MSM_PCIE_GPIO_PERST].num,
-				1 - dev->gpio[MSM_PCIE_GPIO_PERST].on);
+	msm_pcie_config_perst(dev, false);
 	usleep_range(dev->perst_delay_us_min, dev->perst_delay_us_max);
 
 	ep_up_timeout = jiffies + usecs_to_jiffies(EP_UP_TIMEOUT_US);
@@ -6289,10 +6344,8 @@ static int msm_pcie_enable(struct msm_pcie_dev_t *dev)
 
 	PCIE_INFO(dev, "PCIe: Assert the reset of endpoint of RC%d.\n",
 		dev->rc_idx);
-	gpio_set_value(dev->gpio[MSM_PCIE_GPIO_PERST].num,
-				dev->gpio[MSM_PCIE_GPIO_PERST].on);
-	usleep_range(PERST_PROPAGATION_DELAY_US_MIN,
-				 PERST_PROPAGATION_DELAY_US_MAX);
+	msm_pcie_config_perst(dev, true);
+	usleep_range(dev->perst_delay_us_min, dev->perst_delay_us_max);
 
 	/* enable power */
 	ret = msm_pcie_vreg_init(dev);
@@ -6422,8 +6475,7 @@ static void msm_pcie_disable(struct msm_pcie_dev_t *dev)
 	PCIE_INFO(dev, "PCIe: Assert the reset of endpoint of RC%d.\n",
 		dev->rc_idx);
 
-	gpio_set_value(dev->gpio[MSM_PCIE_GPIO_PERST].num,
-				dev->gpio[MSM_PCIE_GPIO_PERST].on);
+	msm_pcie_config_perst(dev, true);
 
 	if (dev->phy_power_down_offset)
 		msm_pcie_write_reg(dev->phy, dev->phy_power_down_offset, 0);
@@ -6588,6 +6640,7 @@ int msm_pcie_enumerate(u32 rc_idx)
 
 	PCIE_DBG(dev, "Enumerate RC%d\n", rc_idx);
 
+	dev->fmd_enable = false;
 	if (!dev->drv_ready) {
 		PCIE_DBG(dev,
 			"PCIe: RC%d: has not been successfully probed yet\n",
@@ -7528,7 +7581,7 @@ static void msm_pcie_handle_linkdown(struct msm_pcie_dev_t *dev)
 		return;
 	}
 
-	if (!dev->suspending) {
+	if (!dev->suspending && !dev->fmd_enable) {
 		/* PCIe registers dump on link down */
 		PCIE_DUMP(dev,
 			"PCIe:Linkdown IRQ for RC%d Dumping PCIe registers\n",
@@ -7550,8 +7603,7 @@ static void msm_pcie_handle_linkdown(struct msm_pcie_dev_t *dev)
 
 	/* assert PERST */
 	if (!(msm_pcie_keep_resources_on & BIT(dev->rc_idx)))
-		gpio_set_value(dev->gpio[MSM_PCIE_GPIO_PERST].num,
-				dev->gpio[MSM_PCIE_GPIO_PERST].on);
+		msm_pcie_config_perst(dev, true);
 
 	PCIE_ERR(dev, "PCIe link is down for RC%d\n", dev->rc_idx);
 
@@ -8450,6 +8502,9 @@ static void msm_pcie_read_dt(struct msm_pcie_dev_t *pcie_dev, int rc_idx,
 	PCIE_DBG(pcie_dev, "PCIe: RC%d: L1.2 threshold scale: %d value: %d.\n",
 		pcie_dev->rc_idx, pcie_dev->l1_2_th_scale,
 		pcie_dev->l1_2_th_value);
+
+	of_property_read_u32(of_node, "qcom,device-vendor-id",
+				&pcie_dev->device_vendor_id);
 
 	pcie_dev->common_clk_en = of_property_read_bool(of_node,
 				"qcom,common-clk-en");

@@ -69,14 +69,6 @@
 #define GSL_MEMFLAGS_GPUIOCOHERENT      0x80000000
 #define GSL_MEMFLAGS_CACHEMODE_MASK     0x0C000000
 
-/* external or internal buffer */
-#define GSL_MEMFLAGS_USERMEM_HGSL_ALLOC 0x00000020
-#define GSL_MEMFLAGS_USERMEM_ASHMEM     0x00000040
-#define GSL_MEMFLAGS_USERMEM_ADDR       0x00000060
-#define GSL_MEMFLAGS_USERMEM_ION        0x00000080
-#define GSL_MEMFLAGS_USERMEM_SHIFT      5
-#define GSL_MEMFLAGS_USERMEM_MASK       0x000000e0
-
 /****************************************************************************/
 /* cache flags                                                              */
 /****************************************************************************/
@@ -119,11 +111,16 @@ enum gsl_deviceid_t {
 	GSL_DEVICE_UNUSED = -1,	/* gcc compiler warning fix, unsigned->signed */
 	GSL_DEVICE_ANY    = 0,
 	GSL_DEVICE_3D     = 1,
-	GSL_DEVICE_2DVG   = 2,
-	GSL_DEVICE_2DVG_1 = 3,
-	GSL_DEVICE_MAX    = 3,
+	GSL_DEVICE_0      = 2,
+	GSL_DEVICE_1      = 3,
 
 	GSL_DEVICE_FOOBAR = 0x7FFFFFFF
+};
+
+enum gsl_devhandle_t {
+	GSL_HANDLE_NULL   = 0,
+	GSL_HANDLE_DEV0   = 1,
+	GSL_HANDLE_DEV1   = 2
 };
 
 /****************************/

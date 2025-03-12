@@ -835,6 +835,18 @@ config Q2SPI_MSM_GENI
 	  This driver can also be built as a module.  If so, the module
 	  will be called q2spi-geni.
 
+config SPI_QCOM_GENI_MSM
+	tristate "Qualcomm Technologies Inc.'s GENI based SPI controller with SCMI"
+	depends on QCOM_GENI_SE_MSM
+	help
+	  This driver supports GENI serial engine based SPI controller in
+	  master mode on the Qualcomm Technologies Inc.'s SoCs. If you say
+	  yes to this option, support will be included for the built-in SPI
+	  interface on the Qualcomm Technologies Inc.'s SoCs.
+
+	  This driver can also be built as a module.  If so, the module
+	  will be called spi-geni-msm.
+
 config SPI_MSM_GENI
 	tristate "Qualcomm Technologies Inc.'s GENI based SPI controller"
 	depends on QCOM_GENI_SE
@@ -1134,9 +1146,10 @@ config SPI_ZYNQ_QSPI
 
 config SPI_ZYNQMP_GQSPI
 	tristate "Xilinx ZynqMP GQSPI controller"
-	depends on (SPI_MASTER && HAS_DMA) || COMPILE_TEST
+	depends on (SPI_MEM && HAS_DMA) || COMPILE_TEST
 	help
 	  Enables Xilinx GQSPI controller driver for Zynq UltraScale+ MPSoC.
+	  This controller only supports SPI memory interface.
 
 config SPI_AMD
 	tristate "AMD SPI controller"
