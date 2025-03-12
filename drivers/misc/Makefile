@@ -65,6 +65,8 @@ obj-$(CONFIG_VCPU_STALL_DETECTOR)	+= vcpu_stall_detector.o
 obj-$(CONFIG_UID_SYS_STATS)	+= uid_sys_stats.o
 obj-$(CONFIG_QSEECOM_PROXY) 	+= qseecom_proxy.o
 
+obj-y	+= tri_state_key/
+
 #ifdef OPLUS_FEATURE_RF_CABLE_DETECT
 oplus_network_rf_cable_monitor-y       := oplus_rf_cable_monitor.o
 obj-$(CONFIG_OPLUS_RF_CABLE_MONITOR)   += oplus_network_rf_cable_monitor.o

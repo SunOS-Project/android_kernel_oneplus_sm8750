@@ -5,12 +5,12 @@
 source "drivers/soc/oplus/dfr/qcom/qcom_pmic_monitor/Kconfig"
 #endif /* OPLUS_FEATURE_PMIC_MONITOR */
 
-#ifdef OPLUS_FEATURE_QCOM_PMICWD
-source "drivers/soc/oplus/dfr/qcom/qcom_pmicwd/Kconfig"
-#endif /* OPLUS_FEATURE_QCOM_PMICWD */
-
 #ifdef OPLUS_FEATURE_DUMP_REASON
 source "drivers/soc/oplus/dfr/qcom/dump_device_info/Kconfig"
+#endif /* OPLUS_FEATURE_DUMP_REASON */
+
+#ifdef OPLUS_FEATURE_DUMP_REASON
+source "drivers/soc/oplus/dfr/qcom/dump_reason/Kconfig"
 #endif /* OPLUS_FEATURE_DUMP_REASON */
 
 #ifdef OPLUS_FEATURE_THEIA
