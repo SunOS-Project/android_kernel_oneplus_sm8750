@@ -85,3 +85,7 @@ obj-$(CONFIG_AW8697_HAPTIC) += vibrator/aw8697_haptic/
 obj-$(CONFIG_SIH_VIBRATOR) += vibrator/si_haptic/
 #endif
 obj-$(CONFIG_OPLUS_POWER_NOTIFIER) += oplus_power_notifier/
+
+#ifdef CONFIG_OPLUS_SENSOR_CONSUMER_IR
+obj-$(CONFIG_OPLUS_SENSOR_CONSUMER_IR_CORE) += oplus_consumer_ir/
+#endif /* CONFIG_OPLUS_SENSOR_CONSUMER_IR */

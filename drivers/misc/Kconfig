@@ -580,4 +580,5 @@ source "drivers/misc/vibrator/aw8697_haptic/Kconfig"
 source "drivers/misc/vibrator/si_haptic/Kconfig"
 source "drivers/misc/oplus_power_notifier/Kconfig"
 source "drivers/misc/tri_state_key/Kconfig"
+source "drivers/misc/oplus_consumer_ir/Kconfig"
 endmenu
