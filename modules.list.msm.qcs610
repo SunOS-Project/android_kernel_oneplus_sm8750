@@ -26,6 +26,8 @@ phy-qcom-ufs.ko
 phy-qcom-ufs-qmp-v3-660.ko
 ufs-qcom.ko
 ufshcd-crypto-qti.ko
+sdhci-msm.ko
+cqhci.ko
 qcom-pdc.ko
 qcom_rpmh.ko
 cmd-db.ko

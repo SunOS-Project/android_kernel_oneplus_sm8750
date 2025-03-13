@@ -52,6 +52,8 @@ def define_qcs610():
         "drivers/mailbox/qcom-apcs-ipc-mailbox.ko",
         "drivers/misc/open-dice.ko",
         "drivers/misc/vcpu_stall_detector.ko",
+        "drivers/mmc/host/cqhci.ko",
+        "drivers/mmc/host/sdhci-msm.ko",
         "drivers/net/can/dev/can-dev.ko",
         "drivers/net/can/slcan/slcan.ko",
         "drivers/net/can/vcan.ko",
