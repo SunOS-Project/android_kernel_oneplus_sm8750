@@ -350,7 +350,8 @@ class BazelBuilder:
                 re.match(r"//{}:.*{}.*_dist".format(self.kernel_dir, t), target.bazel_label)
                 for t in PHONY_TARGETS
             ):
-                out_dir = target.get_out_dir("dist16k")
+                out_dir = target.get_out_dir() + "16k"
+                out_dir = os.path.join(out_dir, "dist")
             else:
                 out_dir = target.get_out_dir("dist")
             self.bazel(
