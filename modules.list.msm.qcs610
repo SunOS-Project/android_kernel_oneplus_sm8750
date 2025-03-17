@@ -2,21 +2,15 @@
 # Copyright (c) 2025, Qualcomm Innovation Center, Inc. All rights reserved.
 arm_smmu.ko
 smem.ko
-msm_geni_serial.ko
 qcom_wdt_core.ko
 qcom_soc_wdt.ko
 memory_dump_v2.ko
 qcom-scm.ko
 llcc-qcom.ko
-msm_sharedmem.ko
-core_hang_detect.ko
 qcom_hwspinlock.ko
-qfprom-sys.ko
 secure_buffer.ko
 socinfo.ko
-boot_stats.ko
 iommu-logger.ko
-eud.ko
 qcom-pdc.ko
 qcom_rpmh.ko
 cmd-db.ko
