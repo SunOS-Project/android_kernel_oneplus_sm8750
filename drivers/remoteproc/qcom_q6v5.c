@@ -5,7 +5,7 @@
  * Copyright (C) 2016-2018 Linaro Ltd.
  * Copyright (C) 2014 Sony Mobile Communications AB
  * Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2024-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
@@ -97,7 +97,13 @@ void qcom_q6v5_register_ssr_subdev(struct qcom_q6v5 *q6v5, struct rproc_subdev *
 {
 	q6v5->ssr_subdev = ssr_subdev;
 }
-EXPORT_SYMBOL(qcom_q6v5_register_ssr_subdev);
+EXPORT_SYMBOL_GPL(qcom_q6v5_register_ssr_subdev);
+
+void qcom_q6v5_register_glink_subdev(struct qcom_q6v5 *q6v5, struct rproc_subdev *glink_subdev)
+{
+	q6v5->glink_subdev = glink_subdev;
+}
+EXPORT_SYMBOL_GPL(qcom_q6v5_register_glink_subdev);
 
 static void qcom_q6v5_crash_handler_work(struct work_struct *work)
 {
@@ -115,7 +121,11 @@ static void qcom_q6v5_crash_handler_work(struct work_struct *work)
 
 	rproc->state = RPROC_CRASHED;
 	list_for_each_entry_reverse(subdev, &rproc->subdevs, node) {
-		if (subdev->stop)
+		/*
+		 * Debug requirement from glink to not clean up their
+		 * data when SSR is not enabled for a remoteproc.
+		 */
+		if (subdev->stop && subdev != q6v5->glink_subdev)
 			subdev->stop(subdev, true);
 	}
 

@@ -31,6 +31,7 @@ struct qcom_q6v5 {
 	int stop_irq;
 
 	struct rproc_subdev *ssr_subdev;
+	struct rproc_subdev *glink_subdev;
 
 	struct work_struct crash_handler;
 
@@ -72,6 +73,7 @@ int qcom_q6v5_init(struct qcom_q6v5 *q6v5, struct platform_device *pdev,
 void qcom_q6v5_deinit(struct qcom_q6v5 *q6v5);
 
 void qcom_q6v5_register_ssr_subdev(struct qcom_q6v5 *q6v5, struct rproc_subdev *ssr_subdev);
+void qcom_q6v5_register_glink_subdev(struct qcom_q6v5 *q6v5, struct rproc_subdev *glink_subdev);
 int qcom_q6v5_prepare(struct qcom_q6v5 *q6v5);
 int qcom_q6v5_unprepare(struct qcom_q6v5 *q6v5);
 int qcom_q6v5_request_stop(struct qcom_q6v5 *q6v5, struct qcom_sysmon *sysmon);
