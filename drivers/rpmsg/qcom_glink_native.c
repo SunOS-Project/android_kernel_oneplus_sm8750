@@ -1324,7 +1324,8 @@ static int qcom_glink_rx_data(struct qcom_glink *glink, size_t avail, unsigned i
 		}
 	}
 
-	if (intent->size - intent->offset < chunk_size) {
+	if (intent->size < intent->offset ||
+	    intent->size - intent->offset < chunk_size) {
 		dev_err(glink->dev, "Insufficient space in intent\n");
 
 		/* The packet header lied, drop payload */
