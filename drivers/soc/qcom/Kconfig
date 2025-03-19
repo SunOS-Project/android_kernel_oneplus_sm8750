@@ -687,6 +687,15 @@ config QCOM_ADSP_SLEEPMON
 	   detects and logs sleep violations from ADSP subsystem. The driver
 	   uses master stats from ADSP subsystem stored in SMEM.
 
+config USB_BAM
+        tristate "USB BAM Driver"
+	depends on SPS && USB_GADGET
+        help
+          Enabling this option adds USB BAM Driver.
+          USB BAM driver was added to supports Smart Peripheral Subsystem
+          Peripheral-to-Peripheral transfers between the USB and other
+          peripheral.
+
 config QCOM_CPU_VENDOR_HOOKS
         tristate "QTI Vendor Hooks Support"
         depends on ARCH_QCOM && ANDROID_VENDOR_HOOKS
