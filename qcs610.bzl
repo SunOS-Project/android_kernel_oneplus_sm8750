@@ -119,6 +119,7 @@ def define_qcs610():
         "drivers/soc/qcom/smp2p.ko",
         "drivers/soc/qcom/socinfo.ko",
         "drivers/soc/qcom/sps/sps_drv.ko",
+        "drivers/soc/qcom/usb_bam.ko",
         "drivers/spi/spi-msm-geni.ko",
         "drivers/tty/serial/msm_geni_serial.ko",
         "drivers/ufs/host/ufs-qcom.ko",
