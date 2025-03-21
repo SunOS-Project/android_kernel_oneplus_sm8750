@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2021, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021, 2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Description: CoreSight TMC USB driver
  */
@@ -326,7 +326,7 @@ static void usb_read_work_fn(struct work_struct *work)
 				atomic_dec(&drvdata->usb_free_buf);
 
 			} else {
-				dev_err_ratelimited(&tmcdrvdata->csdev->dev,
+				dev_dbg_ratelimited(&tmcdrvdata->csdev->dev,
 				"Drop data, offset = %lu, seq = %d, irq = %d\n",
 					drvdata->offset, seq,
 					atomic_read(&drvdata->irq_cnt));
