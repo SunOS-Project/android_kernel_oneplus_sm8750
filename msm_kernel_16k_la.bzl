@@ -456,7 +456,7 @@ def define_msm_16k_la(
     target = msm_target.replace("_", "-") + "16k" + "_" + variant.replace("_", "-")
 
     if variant == "consolidate":
-        base_kernel = "//common:kernel_aarch64_consolidate"
+        base_kernel = "//common:kernel_aarch64_consolidate_16k"
         define_abi_targets = False
     else:
         base_kernel = "//common:kernel_aarch64_16k"
