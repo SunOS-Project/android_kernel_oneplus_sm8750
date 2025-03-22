@@ -18,6 +18,7 @@ pinctrl-msm.ko
 pinctrl-sm6150.ko
 llcc-qcom.ko
 qcom_hwspinlock.ko
+nvmem_qfprom.ko
 secure_buffer.ko
 socinfo.ko
 iommu-logger.ko
