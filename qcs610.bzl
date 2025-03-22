@@ -116,6 +116,7 @@ def define_qcs610():
         "drivers/soc/qcom/qcom_rpmh.ko",
         "drivers/soc/qcom/qcom_soc_wdt.ko",
         "drivers/soc/qcom/qcom_wdt_core.ko",
+        "drivers/soc/qcom/qfprom-sys.ko",
         "drivers/soc/qcom/qmi_helpers.ko",
         "drivers/soc/qcom/qti_pmic_glink.ko",
         "drivers/soc/qcom/secure_buffer.ko",
