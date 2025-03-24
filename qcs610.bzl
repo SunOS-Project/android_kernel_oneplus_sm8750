@@ -132,6 +132,7 @@ def define_qcs610():
         "drivers/soc/qcom/boot_stats.ko",
         "drivers/soc/qcom/cdsprm.ko",
         "drivers/soc/qcom/cmd-db.ko",
+        "drivers/soc/qcom/cx_ipeak.ko",
         "drivers/soc/qcom/dcvs/bwmon.ko",
         "drivers/soc/qcom/dcvs/dcvs_fp.ko",
         "drivers/soc/qcom/dcvs/memlat.ko",
