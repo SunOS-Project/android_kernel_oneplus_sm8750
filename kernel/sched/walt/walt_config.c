@@ -198,7 +198,7 @@ void walt_config(void)
 				&pipeline_sync_cpus, &cpu_array[0][3]);
 		}
 
-	} else if (!strcmp(name, "TUNA") || !strcmp(name, "TUNA7")) {
+	} else if (!strcmp(name, "TUNA") || !strcmp(name, "TUNA7") || !strcmp(name, "TUNAP")) {
 		soc_feat_set(SOC_ENABLE_SILVER_RT_SPREAD_BIT);
 		soc_feat_set(SOC_ENABLE_BOOST_TO_NEXT_CLUSTER_BIT);
 		soc_feat_set(SOC_ENABLE_FORCE_SPECIAL_PIPELINE_PINNING);
