@@ -3,7 +3,7 @@
  * Copied from drivers/hwtracing/stm.p-sys-t.c as of commit d69d5e83110f
  * ("stm class: Add MIPI SyS-T protocol support").
  *
- * Copyright (c) 2022 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022 2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2020-2021 The Linux Foundation. All rights reserved.
  * Copyright (c) 2018, Intel Corporation.
  *
@@ -25,7 +25,7 @@
 #define OST_CONTROL_PROTOCOL		(0x0 << 24)
 
 #define DATA_HEADER (OST_TOKEN_STARTSIMPLE | OST_VERSION_MIPI1 | \
-			OST_ENTITY_FTRACE | OST_CONTROL_PROTOCOL)
+			OST_CONTROL_PROTOCOL)
 
 #define STM_MAKE_VERSION(ma, mi)	((ma << 8) | mi)
 #define STM_HEADER_MAGIC		(0x5953)
