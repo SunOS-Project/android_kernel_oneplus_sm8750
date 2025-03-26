@@ -14,6 +14,7 @@
 #include <linux/of_gpio.h>
 #include <linux/of_mdio.h>
 #include <linux/of_net.h>
+#include <linux/of_platform.h>
 #include <linux/platform_device.h>
 #include <linux/phy.h>
 #include <linux/phy/phy.h>
@@ -233,7 +234,8 @@ qcom_ethqos_set_sgmii_loopback(struct qcom_ethqos *ethqos, bool enable)
 
 static void ethqos_set_func_clk_en(struct qcom_ethqos *ethqos)
 {
-	qcom_ethqos_set_sgmii_loopback(ethqos, true);
+	if (ethqos->needs_sgmii_loopback)
+		qcom_ethqos_set_sgmii_loopback(ethqos, true);
 	rgmii_updatel(ethqos, RGMII_CONFIG_FUNC_CLK_EN,
 		      RGMII_CONFIG_FUNC_CLK_EN, RGMII_IO_MACRO_CONFIG);
 }
@@ -338,6 +340,17 @@ static const struct ethqos_emac_driver_data emac_v4_0_0_data = {
 	},
 };
 
+static const struct of_device_id qcom_ethqos_match[] = {
+	{ .compatible = "qcom,qcs404-ethqos", .data = &emac_v2_3_0_data},
+	{ .compatible = "qcom,sa8775p-ethqos", .data = &emac_v4_0_0_data},
+	{ .compatible = "qcom,sc8280xp-ethqos", .data = &emac_v3_0_0_data},
+	{ .compatible = "qcom,sm8150-ethqos", .data = &emac_v2_1_0_data},
+	{ .compatible = "qcom,stmmac-ethqos", },
+	{ .compatible = "qcom,emac-smmu-embedded", },
+	{ }
+};
+MODULE_DEVICE_TABLE(of, qcom_ethqos_match);
+
 static int ethqos_dll_configure(struct qcom_ethqos *ethqos)
 {
 	struct device *dev = &ethqos->pdev->dev;
@@ -365,7 +378,7 @@ static int ethqos_dll_configure(struct qcom_ethqos *ethqos)
 	rgmii_updatel(ethqos, SDCC_DLL_CONFIG_DLL_EN,
 		      SDCC_DLL_CONFIG_DLL_EN, SDCC_HC_REG_DLL_CONFIG);
 
-	if (!ethqos->has_emac_ge_3 ||
+	if (!ethqos->has_emac_ge_3 &&
 	    (ethqos->emac_ver != EMAC_HW_v2_3_2_RG &&
 		 ethqos->emac_ver != EMAC_HW_v2_1_2)) {
 		rgmii_updatel(ethqos, SDCC_DLL_MCLK_GATING_EN,
@@ -407,7 +420,7 @@ static int ethqos_dll_configure(struct qcom_ethqos *ethqos)
 	rgmii_updatel(ethqos, SDCC_DLL_CONFIG2_DDR_CAL_EN,
 		      SDCC_DLL_CONFIG2_DDR_CAL_EN, SDCC_HC_REG_DLL_CONFIG2);
 
-	if (!ethqos->has_emac_ge_3 ||
+	if (!ethqos->has_emac_ge_3 &&
 	    (ethqos->emac_ver != EMAC_HW_v2_3_2_RG &&
 	     ethqos->emac_ver != EMAC_HW_v2_1_2)) {
 		rgmii_updatel(ethqos, SDCC_DLL_CONFIG2_DLL_CLOCK_DIS,
@@ -534,12 +547,8 @@ static int ethqos_rgmii_macro_init(struct qcom_ethqos *ethqos)
 	int loopback;
 
 	/* Determine if the PHY adds a 2 ns TX delay or the MAC handles it */
-	if ((ethqos->phy_mode != PHY_INTERFACE_MODE_RGMII_ID &&
-	     ethqos->phy_mode != PHY_INTERFACE_MODE_RGMII_TXID) ||
-		ethqos->emac_ver == EMAC_HW_v2_3_2_RG ||
-		ethqos->emac_ver == EMAC_HW_v2_1_2 ||
-		ethqos->emac_ver == EMAC_HW_v2_1_1 ||
-		ethqos->emac_ver == EMAC_HW_v2_3_1)
+	if (ethqos->phy_mode != PHY_INTERFACE_MODE_RGMII_ID &&
+	    ethqos->phy_mode != PHY_INTERFACE_MODE_RGMII_TXID)
 		phase_shift = RGMII_CONFIG2_TX_CLK_PHASE_SHIFT_EN;
 	else
 		phase_shift = 0;
@@ -549,9 +558,9 @@ static int ethqos_rgmii_macro_init(struct qcom_ethqos *ethqos)
 		      0, RGMII_IO_MACRO_CONFIG2);
 
 	/* Determine if this platform wants loopback enabled after programming */
-	if (ethqos->rgmii_config_loopback_en ||
-	    (ethqos->emac_ver != EMAC_HW_v2_3_2_RG ||
-	     ethqos->emac_ver != EMAC_HW_v2_1_2))
+	if (ethqos->rgmii_config_loopback_en &&
+	    ethqos->emac_ver != EMAC_HW_v2_3_2_RG &&
+		ethqos->emac_ver != EMAC_HW_v2_1_2)
 		loopback = RGMII_CONFIG_LOOPBACK_EN;
 	else
 		loopback = 0;
@@ -659,6 +668,12 @@ static int ethqos_rgmii_macro_init(struct qcom_ethqos *ethqos)
 		break;
 
 	case SPEED_10:
+		if (ethqos->emac_ver == EMAC_HW_v2_3_2_RG ||
+		    ethqos->emac_ver == EMAC_HW_v2_1_2 ||
+			ethqos->emac_ver == EMAC_HW_v2_1_1 ||
+			ethqos->emac_ver == EMAC_HW_v2_3_1)
+			phase_shift = RGMII_CONFIG2_TX_CLK_PHASE_SHIFT_EN;
+
 		rgmii_updatel(ethqos, RGMII_CONFIG_DDR_MODE,
 			      RGMII_CONFIG_DDR_MODE, RGMII_IO_MACRO_CONFIG);
 		rgmii_updatel(ethqos, RGMII_CONFIG_BYPASS_TX_ID_EN,
@@ -964,8 +979,12 @@ static void ethqos_fix_mac_speed(void *priv, unsigned int speed, unsigned int mo
 	struct qcom_ethqos *ethqos = priv;
 	int ret = 0;
 
-	qcom_ethqos_set_sgmii_loopback(ethqos, false);
+	if (ethqos->needs_sgmii_loopback)
+		qcom_ethqos_set_sgmii_loopback(ethqos, false);
+
 	ethqos->speed = speed;
+	ethqos_update_link_clk(ethqos, speed);
+
 	if (ethqos->emac_ver == EMAC_HW_v3_0_0_RG)
 		ret = ethqos_configure_mac_v3(ethqos);
 	else
@@ -1021,11 +1040,6 @@ static int ethqos_clks_config(void *priv, bool enabled)
 	}
 
 	return ret;
-}
-
-static void ethqos_clks_disable(void *data)
-{
-	ethqos_clks_config(data, false);
 }
 
 static void ethqos_ptp_clk_freq_config(struct stmmac_priv *priv)
@@ -1249,7 +1263,6 @@ static int qcom_ethqos_probe(struct platform_device *pdev)
 {
 	struct device_node *np = pdev->dev.of_node;
 	const struct ethqos_emac_driver_data *data;
-	struct plat_stmmacenet_data *plat_dat;
 	struct stmmac_resources stmmac_res;
 	struct device *dev = &pdev->dev;
 	struct qcom_ethqos *ethqos = NULL;
@@ -1266,17 +1279,27 @@ static int qcom_ethqos_probe(struct platform_device *pdev)
 		return dev_err_probe(dev, ret,
 				     "Failed to get platform resources\n");
 
+	ethqos = devm_kzalloc(&pdev->dev, sizeof(*ethqos), GFP_KERNEL);
+	if (!ethqos)
+		return -ENOMEM;
+
+	ethqos->pdev = pdev;
+
+	qcom_ethqos_parse_dt(ethqos);
+
+	ret = ethqos_init_regulators(ethqos);
+	if (ret)
+		goto err;
+
+	ret = ethqos_init_gpio(ethqos);
+	if (ret)
+		goto err;
+
 	plat_dat = devm_stmmac_probe_config_dt(pdev, stmmac_res.mac);
 	if (IS_ERR(plat_dat)) {
 		return dev_err_probe(dev, PTR_ERR(plat_dat),
 				     "dt configuration failed\n");
 	}
-
-	ethqos = devm_kzalloc(&pdev->dev, sizeof(*ethqos), GFP_KERNEL);
-	if (!ethqos)
-		return -ENOMEM;
-
-	qcom_ethqos_parse_dt(ethqos);
 
 	plat_dat->clks_config = ethqos_clks_config;
 
@@ -1300,7 +1323,6 @@ static int qcom_ethqos_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	ethqos->pdev = pdev;
 	ethqos->rgmii_base = devm_platform_ioremap_resource_byname(pdev, "rgmii");
 	if (IS_ERR(ethqos->rgmii_base))
 		return dev_err_probe(dev, PTR_ERR(ethqos->rgmii_base),
@@ -1309,24 +1331,29 @@ static int qcom_ethqos_probe(struct platform_device *pdev)
 	ethqos->mac_base = stmmac_res.addr;
 
 	data = of_device_get_match_data(dev);
-	ethqos->por = data->por;
-	ethqos->num_por = data->num_por;
-	ethqos->rgmii_config_loopback_en = data->rgmii_config_loopback_en;
-	ethqos->has_emac_ge_3 = data->has_emac_ge_3;
-	ethqos->needs_sgmii_loopback = data->needs_sgmii_loopback;
 
-	ethqos->link_clk = devm_clk_get(dev, data->link_clk_name ?: "rgmii");
+	/* Properties depend on data block ; retained for backward compatibility */
+	if (data) {
+		if (data->por)
+			ethqos->por = data->por;
+		if (data->num_por)
+			ethqos->num_por = data->num_por;
+		if (data->has_emac_ge_3)
+			ethqos->has_emac_ge_3 = data->has_emac_ge_3;
+		if (data->rgmii_config_loopback_en)
+			ethqos->rgmii_config_loopback_en = data->rgmii_config_loopback_en;
+		if (data->needs_sgmii_loopback)
+			ethqos->needs_sgmii_loopback = data->needs_sgmii_loopback;
+		if (data->has_integrated_pcs)
+			plat_dat->flags |= STMMAC_FLAG_HAS_INTEGRATED_PCS;
+		if (data->dma_addr_width)
+			plat_dat->host_dma_width = data->dma_addr_width;
+	}
+
+	ethqos->link_clk = devm_clk_get(dev, "rgmii");
 	if (IS_ERR(ethqos->link_clk))
 		return dev_err_probe(dev, PTR_ERR(ethqos->link_clk),
 				     "Failed to get link_clk\n");
-
-	ret = ethqos_init_regulators(ethqos);
-	if (ret)
-		goto err;
-
-	ret = ethqos_init_gpio(ethqos);
-	if (ret)
-		goto err;
 
 	ret = ethqos_clks_config(ethqos, true);
 	if (ret)
@@ -1367,10 +1394,6 @@ static int qcom_ethqos_probe(struct platform_device *pdev)
 		plat_dat->flags |= STMMAC_FLAG_TSO_EN;
 	if (of_device_is_compatible(np, "qcom,qcs404-ethqos"))
 		plat_dat->flags |= STMMAC_FLAG_RX_CLK_RUNS_IN_LPI;
-	if (data->has_integrated_pcs)
-		plat_dat->flags |= STMMAC_FLAG_HAS_INTEGRATED_PCS;
-	if (data->dma_addr_width)
-		plat_dat->host_dma_width = data->dma_addr_width;
 
 	if (ethqos->serdes_phy) {
 		plat_dat->serdes_powerup = qcom_ethqos_serdes_powerup;
@@ -1427,7 +1450,6 @@ err:
 static int qcom_ethqos_remove(struct platform_device *pdev)
 {
 	struct qcom_ethqos *ethqos;
-	int ret;
 	struct stmmac_priv *priv;
 
 	ethqos = get_stmmac_bsp_priv(&pdev->dev);
@@ -1441,18 +1463,9 @@ static int qcom_ethqos_remove(struct platform_device *pdev)
 	emac_emb_smmu_exit();
 	ethqos_disable_regulators(ethqos);
 	ethqos_clks_config(ethqos, false);
-}
 
-static const struct of_device_id qcom_ethqos_match[] = {
-	{ .compatible = "qcom,qcs404-ethqos", .data = &emac_v2_3_0_data},
-	{ .compatible = "qcom,sa8775p-ethqos", .data = &emac_v4_0_0_data},
-	{ .compatible = "qcom,sc8280xp-ethqos", .data = &emac_v3_0_0_data},
-	{ .compatible = "qcom,sm8150-ethqos", .data = &emac_v2_1_0_data},
-	{ .compatible = "qcom,stmmac-ethqos", },
-	{ .compatible = "qcom,emac-smmu-embedded", },
-	{ }
-};
-MODULE_DEVICE_TABLE(of, qcom_ethqos_match);
+	return 0;
+}
 
 static struct platform_driver qcom_ethqos_driver = {
 	.probe  = qcom_ethqos_probe,

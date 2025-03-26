@@ -6,13 +6,14 @@
 #include <linux/of_device.h>
 #include <linux/of_gpio.h>
 #include <linux/phy.h>
+#include <linux/pinctrl/consumer.h>
 #include <linux/platform_device.h>
 #include <linux/regulator/consumer.h>
 
 #include "dwmac-qcom-ethqos.h"
 #include "stmmac.h"
 
-#define EMAC_GDSC_EMAC_NAME "gdsc_emac"
+#define EMAC_GDSC_EMAC_NAME "emac_gdsc"
 #define EMAC_VREG_RGMII_NAME "vreg_rgmii"
 #define EMAC_VREG_EMAC_PHY_NAME "vreg_emac_phy"
 #define EMAC_VREG_RGMII_IO_PADS_NAME "vreg_rgmii_io_pads"
@@ -60,7 +61,7 @@ int ethqos_init_regulators(struct qcom_ethqos *ethqos)
 	int ret = 0;
 
 	if (of_property_read_bool(ethqos->pdev->dev.of_node,
-				  "gdsc_emac-supply")) {
+				  "gdsc-emac-supply")) {
 		ethqos->gdsc_emac =
 		devm_regulator_get(&ethqos->pdev->dev, EMAC_GDSC_EMAC_NAME);
 		if (IS_ERR(ethqos->gdsc_emac)) {
