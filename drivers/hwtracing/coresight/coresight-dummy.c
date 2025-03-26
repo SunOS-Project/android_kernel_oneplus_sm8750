@@ -117,9 +117,7 @@ static void dummy_source_disable(struct coresight_device *csdev,
 	struct dummy_drvdata *drvdata =
 		 dev_get_drvdata(csdev->dev.parent);
 	coresight_csr_set_etr_atid(csdev, drvdata->traceid, false, NULL);
-	if (drvdata->static_atid && drvdata->traceid < CORESIGHT_TRACE_ID_RES_TOP)
-		coresight_trace_id_free_reserved_id(drvdata->traceid);
-	else
+	if (!drvdata->static_atid)
 		coresight_trace_id_put_system_id(drvdata->traceid);
 	dev_dbg(csdev->dev.parent, "Dummy source disabled\n");
 }
@@ -239,16 +237,17 @@ static int dummy_probe(struct platform_device *pdev)
 	if (of_device_is_compatible(node, "arm,coresight-dummy-source")) {
 		if (!of_property_read_u32(pdev->dev.of_node, "atid", &trace_id)) {
 			drvdata->static_atid = true;
-			ret = coresight_trace_id_reserve_id(trace_id);
-			if (ret) {
-				dev_err(drvdata->dev, "Reserve atid: %d fail\n", drvdata->traceid);
-				return ret;
+			if (trace_id < CORESIGHT_TRACE_ID_RES_TOP) {
+				ret = coresight_trace_id_reserve_id(trace_id);
+				if (ret) {
+					dev_err(drvdata->dev, "Reserve atid: %d fail\n",
+						    trace_id);
+					return ret;
+				}
 			}
 			drvdata->traceid = (u8)trace_id;
 		}
 	}
-
-
 
 	dev_dbg(dev, "Dummy device initialized\n");
 
@@ -261,7 +260,8 @@ static int dummy_remove(struct platform_device *pdev)
 	struct device *dev = &pdev->dev;
 
 	pm_runtime_disable(dev);
-
+	if (drvdata->static_atid && drvdata->traceid < CORESIGHT_TRACE_ID_RES_TOP)
+		coresight_trace_id_free_reserved_id(drvdata->traceid);
 	coresight_unregister(drvdata->csdev);
 	return 0;
 }
