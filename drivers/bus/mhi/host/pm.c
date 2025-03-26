@@ -933,6 +933,13 @@ int mhi_pm_suspend(struct mhi_controller *mhi_cntrl)
 		return -EBUSY;
 	}
 
+	write_unlock_irq(&mhi_cntrl->pm_lock);
+	/* finish reg writes before D3 cold */
+	mhi_force_reg_write(mhi_cntrl);
+	MHI_VERB(dev, "Reg writes are done\n");
+
+	write_lock_irq(&mhi_cntrl->pm_lock);
+
 	MHI_VERB(dev, "Allowing M3 transition\n");
 	new_state = mhi_tryset_pm_state(mhi_cntrl, MHI_PM_M3_ENTER);
 	if (new_state != MHI_PM_M3_ENTER) {
@@ -948,9 +955,6 @@ int mhi_pm_suspend(struct mhi_controller *mhi_cntrl)
 	mhi_set_mhi_state(mhi_cntrl, MHI_STATE_M3);
 	write_unlock_irq(&mhi_cntrl->pm_lock);
 	MHI_VERB(dev, "Waiting for M3 completion\n");
-
-	/* finish reg writes before D3 cold */
-	mhi_force_reg_write(mhi_cntrl);
 
 	ret = wait_event_timeout(mhi_cntrl->state_event,
 				 mhi_cntrl->dev_state == MHI_STATE_M3 ||
