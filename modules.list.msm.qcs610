@@ -17,3 +17,6 @@ socinfo.ko
 boot_stats.ko
 iommu-logger.ko
 eud.ko
+qcom-pdc.ko
+qcom_rpmh.ko
+cmd-db.ko
