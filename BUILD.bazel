@@ -28,12 +28,15 @@ load(
     "merged_kernel_uapi_headers",
 )
 load(":abi.bzl", "cc_binary_with_abi")
+load(":consolidate.bzl", "define_consolidate")
+load(":consolidate_16k.bzl", "define_consolidate_16k")
 load(
     ":modules.bzl",
     "get_gki_modules_list",
     "get_gki_protected_modules_list",
     "get_kunit_modules_list",
 )
+load(":msm_platforms.bzl", "define_msm_platforms")
 
 package(
     default_visibility = [
@@ -127,11 +130,13 @@ filegroup(
         "android/abi_gki_aarch64_mtktv",
         "android/abi_gki_aarch64_nothing",
         "android/abi_gki_aarch64_oplus",
+        "android/abi_gki_aarch64_paragon",
         "android/abi_gki_aarch64_pixel",
         "android/abi_gki_aarch64_pixel_watch",
         "android/abi_gki_aarch64_qcom",
         "android/abi_gki_aarch64_sunxi",
         "android/abi_gki_aarch64_tcl",
+        "android/abi_gki_aarch64_transsion",
         "android/abi_gki_aarch64_tuxera",
         "android/abi_gki_aarch64_type_visibility",
         "android/abi_gki_aarch64_unisoc",
@@ -591,15 +596,9 @@ copy_to_dist_dir(
     log = "info",
 )
 
-load(":consolidate.bzl", "define_consolidate")
-
 define_consolidate()
 
-load(":consolidate_16k.bzl", "define_consolidate_16k")
-
 define_consolidate_16k()
-
-load(":msm_platforms.bzl", "define_msm_platforms")
 
 define_msm_platforms()
 
@@ -650,7 +649,6 @@ _ROCKPI4_MODULE_OUTS = [
     "drivers/thermal/rockchip_thermal.ko",
     "drivers/usb/host/ohci-hcd.ko",
     "drivers/usb/host/ohci-platform.ko",
-    "drivers/virtio/virtio_pci_legacy_dev.ko",
     "net/core/failover.ko",
 ]
 
@@ -959,8 +957,10 @@ ddk_headers(
         "drivers/usb/core/usb.h",
         "drivers/usb/host/pci-quirks.h",
         "drivers/usb/host/xhci.h",
+        "drivers/usb/host/xhci-caps.h",
         "drivers/usb/host/xhci-ext-caps.h",
         "drivers/usb/host/xhci-plat.h",
+        "drivers/usb/host/xhci-port.h",
     ],
     linux_includes = [
         "drivers/usb",
@@ -1400,6 +1400,28 @@ cc_binary_with_abi(
         ":kselftest_futex_headers_lib",
         ":kselftest_headers_lib",
     ],
+)
+
+cc_library(
+    name = "kselftest_memfd",
+    srcs = ["tools/testing/selftests/memfd/common.c"],
+    hdrs = ["tools/testing/selftests/memfd/common.h"],
+    copts = _KSELFTEST_COPTS,
+    visibility = ["//visibility:private"],
+    deps = [
+        ":kselftest_headers_lib",
+    ],
+)
+
+cc_binary_with_abi(
+    name = "kselftest_memfd_test",
+    srcs = ["tools/testing/selftests/memfd/memfd_test.c"],
+    copts = _KSELFTEST_COPTS,
+    includes = ["tools/testing/selftests"],
+    path_prefix = _KSELFTEST_DIR,
+    target_compatible_with = ["@platforms//os:android"],
+    visibility = ["//visibility:private"],
+    deps = [":kselftest_memfd"],
 )
 
 cc_binary_with_abi(
@@ -2111,6 +2133,7 @@ android_filegroup(
         ":kselftest_futex_futex_wait_x86_64",
         ":kselftest_gen_config",
         ":kselftest_kcmp_kcmp_test_x86_64",
+        ":kselftest_memfd_test_x86_64",
         ":kselftest_mm_compaction_test_x86_64",
         ":kselftest_mm_hugepage_mmap_x86_64",
         ":kselftest_mm_hugepage_shm_x86_64",
@@ -2315,6 +2338,7 @@ android_filegroup(
         ":kselftest_futex_futex_wait_wouldblock_arm64",
         ":kselftest_gen_config",
         ":kselftest_kcmp_kcmp_test_arm64",
+        ":kselftest_memfd_test_arm64",
         ":kselftest_mm_compaction_test_arm64",
         ":kselftest_mm_hugepage_mmap_arm64",
         ":kselftest_mm_hugepage_shm_arm64",

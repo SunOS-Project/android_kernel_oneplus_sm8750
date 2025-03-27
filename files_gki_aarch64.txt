@@ -1896,6 +1896,8 @@ drivers/usb/gadget/function/uvc_configfs.c
 drivers/usb/gadget/function/uvc_configfs.h
 drivers/usb/gadget/function/uvc_queue.c
 drivers/usb/gadget/function/uvc_queue.h
+drivers/usb/gadget/function/uvc_trace.c
+drivers/usb/gadget/function/uvc_trace.h
 drivers/usb/gadget/function/uvc_v4l2.c
 drivers/usb/gadget/function/uvc_v4l2.h
 drivers/usb/gadget/function/uvc_video.c
@@ -1921,6 +1923,7 @@ drivers/usb/host/ehci-timer.c
 drivers/usb/host/ehci.h
 drivers/usb/host/pci-quirks.c
 drivers/usb/host/pci-quirks.h
+drivers/usb/host/xhci-caps.h
 drivers/usb/host/xhci-dbg.c
 drivers/usb/host/xhci-dbgcap.h
 drivers/usb/host/xhci-debugfs.c
@@ -1934,6 +1937,7 @@ drivers/usb/host/xhci-pci.c
 drivers/usb/host/xhci-pci.h
 drivers/usb/host/xhci-plat.c
 drivers/usb/host/xhci-plat.h
+drivers/usb/host/xhci-port.h
 drivers/usb/host/xhci-ring.c
 drivers/usb/host/xhci-trace.c
 drivers/usb/host/xhci-trace.h
@@ -2043,6 +2047,8 @@ drivers/virtio/virtio_anchor.c
 drivers/virtio/virtio_balloon.c
 drivers/virtio/virtio_pci_common.c
 drivers/virtio/virtio_pci_common.h
+drivers/virtio/virtio_pci_legacy.c
+drivers/virtio/virtio_pci_legacy_dev.c
 drivers/virtio/virtio_pci_modern.c
 drivers/virtio/virtio_pci_modern_dev.c
 drivers/virtio/virtio_ring.c
@@ -4285,6 +4291,8 @@ include/net/tcx.h
 include/net/timewait_sock.h
 include/net/tipc.h
 include/net/tls.h
+include/net/tls_prot.h
+include/net/tls_toe.h
 include/net/transp_v6.h
 include/net/tso.h
 include/net/udp.h
@@ -6454,6 +6462,7 @@ net/sched/sch_prio.c
 net/sched/sch_sfq.c
 net/sched/sch_tbf.c
 net/socket.c
+net/strparser/strparser.c
 net/sysctl_net.c
 net/tipc/addr.c
 net/tipc/addr.h
@@ -6499,6 +6508,13 @@ net/tipc/trace.c
 net/tipc/trace.h
 net/tipc/udp_media.c
 net/tipc/udp_media.h
+net/tls/tls.h
+net/tls/tls_main.c
+net/tls/tls_proc.c
+net/tls/tls_strp.c
+net/tls/tls_sw.c
+net/tls/trace.c
+net/tls/trace.h
 net/unix/af_unix.c
 net/unix/garbage.c
 net/unix/scm.c
