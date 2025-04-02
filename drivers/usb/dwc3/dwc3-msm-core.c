@@ -6584,7 +6584,7 @@ static int dwc3_msm_host_ss_powerup(struct dwc3_msm *mdwc)
 
 static int usb_audio_pre_reset(struct usb_interface *intf)
 {
-	return 1;
+	return 0;
 }
 
 static int usb_audio_post_reset(struct usb_interface *intf)
