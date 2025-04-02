@@ -498,6 +498,17 @@ static const struct llcc_slice_config sun_data[] = {
 						1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 };
 
+static const struct llcc_slice_config sm6150_data[] = {
+	{LLCC_CPUSS,    1, 128, 1, 0, 0xFFFFFF, 0x0, 0, 0, 0, 1, 1, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{LLCC_MDM,      8, 256, 0, 1, 0xFFFFFF, 0x0, 0, 0, 0, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{LLCC_GPUHTW,   11, 128, 1, 1, 0xFFFFFF, 0x0, 0, 0, 0, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{LLCC_GPU,      12, 128, 1, 0, 0xFFFFFF, 0x0, 0, 0, 0, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+};
+
 static const struct llcc_slice_config tuna_data[] = {
 	{LLCC_CPUSS,     1, 4992, 1, 0, 0xFFFFFF,
 			0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -895,6 +906,14 @@ static const struct qcom_llcc_config sun_cfg = {
 	.need_llcc_cfg	= true,
 	.reg_offset	= llcc_v6_reg_offset,
 	.edac_reg_offset = &llcc_v6_edac_reg_offset,
+};
+
+static const struct qcom_llcc_config sm6150_cfg = {
+	.sct_data       = sm6150_data,
+	.size           = ARRAY_SIZE(sm6150_data),
+	.need_llcc_cfg  = true,
+	.reg_offset     = llcc_v1_reg_offset,
+	.edac_reg_offset = &llcc_v1_edac_reg_offset,
 };
 
 static const struct qcom_llcc_config tuna_cfg = {
@@ -1823,6 +1842,7 @@ static const struct of_device_id qcom_llcc_of_match[] = {
 	{ .compatible = "qcom,kera-llcc", .data = &kera_cfg },
 	{ .compatible = "qcom,x1e80100-llcc", .data = &x1e80100_cfg },
 	{ .compatible = "qcom,sdxpinn-llcc", .data = &sdxpinn_cfg },
+	{ .compatible = "qcom,sm6150-llcc", .data = &sm6150_cfg },
 	{ }
 };
 MODULE_DEVICE_TABLE(of, qcom_llcc_of_match);
