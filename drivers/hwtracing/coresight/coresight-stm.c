@@ -291,8 +291,6 @@ static void stm_disable(struct coresight_device *csdev,
 		pm_runtime_put_sync(csdev->dev.parent);
 
 		coresight_csr_set_etr_atid(csdev, drvdata->traceid, false, NULL);
-		if (drvdata->static_atid)
-			coresight_trace_id_free_reserved_id(drvdata->traceid);
 		local_set(&drvdata->mode, CS_MODE_DISABLED);
 		dev_dbg(&csdev->dev, "STM tracing disabled\n");
 	}
@@ -945,6 +943,8 @@ static void stm_remove(struct amba_device *adev)
 
 	if (!drvdata->static_atid)
 		coresight_trace_id_put_system_id(drvdata->traceid);
+	else
+		coresight_trace_id_free_reserved_id(drvdata->traceid);
 	coresight_unregister(drvdata->csdev);
 
 	stm_unregister_device(&drvdata->stm);

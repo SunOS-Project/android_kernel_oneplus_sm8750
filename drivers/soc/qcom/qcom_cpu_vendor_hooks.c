@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #define pr_fmt(fmt) "VendorHooks: " fmt
@@ -137,15 +137,15 @@ static void store_kaslr_offset(void)
 	iounmap(mem);
 }
 
+#else
+static void store_kaslr_offset(void) {}
+#endif /* CONFIG_RANDOMIZE_BASE */
+
 #if defined(CONFIG_HIBERNATION)
 static struct syscore_ops kaslr_offset_restore_syscore_ops = {
 	.resume = store_kaslr_offset,
 };
 #endif /* CONFIG_HIBERNATION */
-
-#else
-static void store_kaslr_offset(void) {}
-#endif /* CONFIG_RANDOMIZE_BASE */
 
 static int __init qcom_vendor_hook_driver_init(void)
 {

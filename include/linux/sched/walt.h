@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _LINUX_SCHED_WALT_H
@@ -306,7 +306,7 @@ static inline int walt_set_enforce_high_irq_cpus(struct cpumask *set)
 	return -EINVAL;
 }
 
-static inline void walt_unset_enforce_high_irq_cpus(struct cpumask *unset)
+static inline int walt_unset_enforce_high_irq_cpus(struct cpumask *unset)
 {
 	return -EINVAL;
 }
