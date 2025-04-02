@@ -217,16 +217,49 @@ void account_yields(u64 wallclock)
  */
 
 DEFINE_PER_CPU(unsigned int, walt_yield_to_sleep);
+static void inject_sleep(struct walt_task_struct *wts)
+{
+	struct rq *rq = task_rq(current);
+	struct rq_flags rf;
+	u64 current_ts = 0;
+	u64 frame = 0, delta = 0, sleep_nsec = 0;
+
+	/*
+	 * updating and reading clock will not hurt here as this cpu is
+	 * already in yield cycle not doing anything significant.
+	 */
+	rq_lock_irqsave(rq, &rf);
+	update_rq_clock(rq);
+	rq_unlock_irqrestore(rq, &rf);
+	current_ts = rq->clock;
+	if (current_ts > wts->yield_ts + MIN_FRAME_YIELD_INTERVAL_NSEC) {
+		frame = frame_from_ravg_window();
+		delta = current_ts - wts->yield_ts;
+		wts->yield_total_sleep_usec = 0;
+		if (frame > delta) {
+			sleep_nsec = (frame - delta) - YIELD_SLEEP_HEADROOM;
+			wts->yield_total_sleep_usec = sleep_nsec /
+				NSEC_PER_USEC;
+		}
+	}
+	wts->yield_ts = current_ts;
+	if (wts->yield_total_sleep_usec >= YIELD_SLEEP_TIME_USEC) {
+		per_cpu(walt_yield_to_sleep, raw_smp_processor_id())++;
+		wts->yield_state |= YIELD_INDUCED_SLEEP;
+		total_sleep_cnt++;
+		usleep_range_state(YIELD_SLEEP_TIME_USEC,
+				   YIELD_SLEEP_TIME_USEC, TASK_INTERRUPTIBLE);
+		wts->yield_total_sleep_usec = wts->yield_total_sleep_usec -
+			YIELD_SLEEP_TIME_USEC;
+	}
+}
+
 static void walt_do_sched_yield_before(void *unused, long *skip)
 {
 	struct walt_task_struct *wts = (struct walt_task_struct *)current->android_vendor_data1;
 	struct walt_sched_cluster *cluster = cpu_cluster(task_cpu(current));
 	struct smart_freq_cluster_info *smart_freq_info = cluster->smart_freq_info;
 	bool in_legacy_uncap;
-	struct rq *rq = task_rq(current);
-	struct rq_flags rf;
-	u64 current_ts = 0;
-	u64 frame = 0, delta = 0, sleep_nsec = 0;
 
 	if (unlikely(walt_disabled))
 		return;
@@ -234,6 +267,11 @@ static void walt_do_sched_yield_before(void *unused, long *skip)
 	if (!walt_fair_task(current))
 		return;
 
+	if (pipeline_in_progress() && walt_pipeline_low_latency_task(current)) {
+		*skip = true;
+		inject_sleep(wts);
+		return;
+	}
 	cluster = cpu_cluster(task_cpu(current));
 	smart_freq_info = cluster->smart_freq_info;
 
@@ -253,34 +291,8 @@ static void walt_do_sched_yield_before(void *unused, long *skip)
 					  BIT(PIPELINE_120FPS_OR_GREATER_SMART_FREQ)));
 			if (!in_legacy_uncap) {
 				wts->yield_state |= YIELD_INDUCED_SLEEP;
-				total_sleep_cnt++;
 				*skip = true;
-				/*
-				 * updating and reading clock will not hurt here as this cpu is
-				 * already in yield cycle not doing anything significant.
-				 */
-				rq_lock_irqsave(rq, &rf);
-				update_rq_clock(rq);
-				rq_unlock_irqrestore(rq, &rf);
-				current_ts = rq->clock;
-				if (current_ts > wts->yield_ts + MIN_FRAME_YIELD_INTERVAL_NSEC) {
-					frame = frame_from_ravg_window();
-					delta = current_ts - wts->yield_ts;
-					wts->yield_total_sleep_usec = 0;
-					if (frame > delta) {
-						sleep_nsec = (frame - delta) - YIELD_SLEEP_HEADROOM;
-						wts->yield_total_sleep_usec = sleep_nsec /
-										NSEC_PER_USEC;
-					}
-				}
-				wts->yield_ts = current_ts;
-				if (wts->yield_total_sleep_usec >= YIELD_SLEEP_TIME_USEC) {
-					per_cpu(walt_yield_to_sleep, raw_smp_processor_id())++;
-					usleep_range_state(YIELD_SLEEP_TIME_USEC,
-							YIELD_SLEEP_TIME_USEC, TASK_INTERRUPTIBLE);
-					wts->yield_total_sleep_usec = wts->yield_total_sleep_usec -
-							YIELD_SLEEP_TIME_USEC;
-				}
+				inject_sleep(wts);
 			}
 		}
 	} else {
