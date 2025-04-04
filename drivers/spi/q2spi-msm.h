@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only
  *
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _SPI_Q2SPI_MSM_H_
@@ -596,6 +596,8 @@ struct q2spi_geni {
 	spinlock_t cr_queue_lock;
 	/* lock to protect geni resource on/off */
 	struct mutex geni_resource_lock;
+	/* lock to protect data dump */
+	spinlock_t data_dump_lock;
 	u32 max_speed_hz;
 	u32 cur_speed_hz;
 	int oversampling;
