@@ -100,6 +100,7 @@ def define_qcs610():
         "drivers/pinctrl/qcom/pinctrl-spmi-gpio.ko",
         "drivers/pinctrl/qcom/pinctrl-spmi-mpp.ko",
         "drivers/power/reset/qcom-pon.ko",
+        "drivers/power/reset/qcom-reboot-reason.ko",
         "drivers/power/reset/reboot-mode.ko",
         "drivers/power/supply/qcom/qcom-qpnp-qg.ko",
         "drivers/power/supply/qcom/qcom-smb1390-charger.ko",
