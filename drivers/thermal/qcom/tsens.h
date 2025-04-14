@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 /*
  * Copyright (c) 2015, The Linux Foundation. All rights reserved.
- * Copyright (c) 2021, 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021, 2024-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef __QCOM_TSENS_H__
@@ -21,6 +21,8 @@
 #define THRESHOLD_MAX_ADC_CODE	0x3ff
 #define THRESHOLD_MIN_ADC_CODE	0x0
 #define COLD_SENSOR_HW_ID	128
+#define TM_SN_STATUS_VALID_BIT		BIT(21)
+#define TM_LAST_TEMP_BIT_MASK		0xFFF
 
 #define MAX_SENSORS 16
 
