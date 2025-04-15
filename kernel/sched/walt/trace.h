@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #undef TRACE_SYSTEM
@@ -1811,7 +1811,10 @@ TRACE_EVENT(sched_pipeline_tasks,
 		__field(int, special_pid)
 		__field(unsigned int, util_thres)
 		__field(u32, total_util)
+		__field(unsigned int, pipeline_activity_cnt)
+		__field(int, event_windows)
 		__field(bool, pipeline_pinning)
+		__field(bool, lst)
 	),
 
 	TP_fast_assign(
@@ -1828,14 +1831,18 @@ TRACE_EVENT(sched_pipeline_tasks,
 		__entry->util_thres	= sysctl_sched_pipeline_util_thres;
 		__entry->total_util	= total_util;
 		__entry->pipeline_pinning = pipeline_pinning;
+		__entry->pipeline_activity_cnt = heavy_wts->pipeline_activity_cnt;
+		__entry->lst		= heavy_wts->lst;
+		__entry->event_windows	= atomic_read(&heavy_wts->event_windows);
 	),
 
-	TP_printk("type=%d index=%d pid=%d comm=%s demand=%d coloc_demand=%d pipeline_cpu=%d low_latency=0x%x nr_pipeline=%d special_pid=%d util_thres=%u total_util=%u pipeline_pin=%d",
+	TP_printk("type=%d index=%d pid=%d comm=%s demand=%d coloc_demand=%d pipeline_cpu=%d low_latency=0x%x nr_pipeline=%d special_pid=%d util_thres=%u total_util=%u pipeline_pin=%d event_windows=%d pipeline_activity_cnt=%u lst=%d",
 			__entry->type, __entry->index, __entry->pid,
 			__entry->comm, __entry->demand_scaled, __entry->coloc_demand,
 			__entry->pipeline_cpu, __entry->low_latency, __entry->nr,
 			__entry->special_pid, __entry->util_thres, __entry->total_util,
-			__entry->pipeline_pinning)
+			__entry->pipeline_pinning, __entry->event_windows,
+			__entry->pipeline_activity_cnt, __entry->lst)
 );
 
 TRACE_EVENT(sched_pipeline_swapped,

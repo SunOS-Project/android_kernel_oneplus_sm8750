@@ -2224,7 +2224,8 @@ static void update_lst(struct walt_task_struct *wts, u64 wallclock,
 
 	/* tracking the number of windows where a task has encountered an event. */
 	if (new_window)
-		wts->event_windows++;
+		atomic_inc(&wts->event_windows);
+
 }
 
 /*
@@ -2819,8 +2820,9 @@ static inline void __sched_fork_init(struct task_struct *p)
 	wts->lst		= false;
 	wts->lst_tgt_ns		= 0;
 	wts->lst_state_counter	= 0;
-	wts->event_windows	= 0;
 	wts->continuous_active	= 0;
+	wts->pipeline_activity_cnt = 0;
+	atomic_set(&wts->event_windows, 0);
 }
 
 static void init_new_task_load(struct task_struct *p)
