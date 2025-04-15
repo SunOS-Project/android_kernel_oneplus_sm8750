@@ -163,6 +163,11 @@ struct walt_task_struct {
 	u32				period_contrib_run;
 	u64				yield_ts;
 	u64				yield_total_sleep_usec;
+	s64				lst_tgt_ns;
+	u32				lst_state_counter;
+	unsigned int			event_windows;
+	unsigned int			continuous_active;
+	bool				lst;
 };
 
 #define wts_to_ts(wts) ({ \
