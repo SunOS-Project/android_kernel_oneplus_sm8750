@@ -54,6 +54,8 @@ def define_qcs610():
         "drivers/net/usb/usbnet.ko",
         "drivers/net/wwan/wwan.ko",
         "drivers/nvmem/nvmem_qfprom.ko",
+        "drivers/pinctrl/qcom/pinctrl-msm.ko",
+        "drivers/pinctrl/qcom/pinctrl-sm6150.ko",
         "drivers/pps/pps_core.ko",
         "drivers/ptp/ptp.ko",
         "drivers/ptp/ptp_kvm.ko",
