@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/kernel.h>
@@ -10,6 +10,7 @@
 #include <linux/irq.h>
 #include <linux/irqdesc.h>
 #include <linux/sched.h>
+#include <scsi/scsi_device.h>
 #include <linux/usb/dwc3-msm.h>
 #include <linux/usb/composite.h>
 #include <linux/usb/android_configfs_uevent.h>
@@ -299,6 +300,17 @@ static int exit_android_work(struct kretprobe_instance *ri,
 	return 0;
 }
 
+static int entry_uas_slave_configure(struct kretprobe_instance *ri,
+		struct pt_regs *regs)
+{
+	struct scsi_device *sdev = (struct scsi_device *)regs->regs[0];
+
+	/* this identifies any scsi device as removable in userspace. */
+	sdev->removable = 1;
+
+	return 0;
+}
+
 #define ENTRY_EXIT(name) {\
 	.handler = exit_##name,\
 	.entry_handler = entry_##name,\
@@ -328,6 +340,7 @@ static struct kretprobe dwc3_msm_probes[] = {
 	ENTRY(trace_event_raw_event_dwc3_log_trb),
 	ENTRY(trace_event_raw_event_dwc3_log_event),
 	ENTRY(trace_event_raw_event_dwc3_log_ep),
+	ENTRY(uas_slave_configure),
 };
 
 

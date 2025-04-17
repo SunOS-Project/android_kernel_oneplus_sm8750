@@ -1209,4 +1209,14 @@ config QCOM_PMIC_ECID
 	  This driver reads the chipset ECID details from the respective address and
 	  exposes the details via sysfs interface.
 	  This helps in identification of PMIC part information.
+
+config QTI_HW_KEY_MANAGER_V1
+	tristate "Enable QTI Hardware Key Manager v1 for storage encryption"
+	default n
+	help
+	 Say 'Y' to enable the hardware key manager v1 driver used to operate
+	 and access key manager hardware block. This is used to interface with
+	 HWKM hardware to perform key operations from the kernel which will
+	 be used for storage encryption.
+
 endmenu
