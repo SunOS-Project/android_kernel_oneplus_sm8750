@@ -59,6 +59,8 @@ def define_qcs610():
         "drivers/pps/pps_core.ko",
         "drivers/ptp/ptp.ko",
         "drivers/ptp/ptp_kvm.ko",
+        "drivers/regulator/proxy-consumer.ko",
+        "drivers/regulator/rpmh-regulator.ko",
         "drivers/rtc/lib_test.ko",
         "drivers/soc/qcom/boot_stats.ko",
         "drivers/soc/qcom/cmd-db.ko",
