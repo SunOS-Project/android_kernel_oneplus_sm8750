@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: GPL-2.0-only
-# Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+# Copyright (c) 2022-2023,2025, Qualcomm Innovation Center, Inc. All rights reserved.
 
 import argparse
 import errno
@@ -396,6 +396,14 @@ class BazelBuilder:
         if self.dry_run:
             self.user_opts.append("--nobuild")
 
+        # List of files to avoid symbolic link creation
+        avoid_symlink_files = [
+        "drivers/block/zram/zcomp.h",
+        "drivers/block/zram/zram_drv.h",
+        "include/linux/zsmalloc.h",
+        "include/linux/ieee80211.h",
+        ]
+
         try:
             if self.gki_headers:
                 gki_files_path = os.path.join(self.workspace, 'msm-kernel/files_gki_aarch64.txt')
@@ -405,8 +413,12 @@ class BazelBuilder:
                 msm_d = os.path.join(self.workspace, "msm-kernel")
                 for f in gki_files:
                     if ".h" in f:
-                        logging.info('GKI header file...%s', f)
                         f=f.strip()
+                        if f in avoid_symlink_files:
+                            logging.info('Skipping symbolic link creation for %s', f)
+                            continue
+
+                        logging.info('GKI header file...%s', f)
                         common_f = os.path.join(common_d, f)
                         msm_f = os.path.join(msm_d, f)
                         if os.path.exists(msm_f):
