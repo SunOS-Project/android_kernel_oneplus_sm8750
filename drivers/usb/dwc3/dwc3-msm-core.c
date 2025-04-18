@@ -6701,11 +6701,8 @@ static int dwc3_msm_host_notifier(struct notifier_block *nb,
 					wcd_usbss_dpdm_switch_update(true,
 							udev->speed == USB_SPEED_HIGH);
 				dwc3_msm_update_interfaces(udev);
-			} else {
-				if (mdwc->max_rh_port_speed < USB_SPEED_SUPER)
-					dwc3_msm_host_ss_powerup(mdwc);
+			} else
 				mdwc->max_rh_port_speed = USB_SPEED_SUPER;
-			}
 		} else {
 			/* set rate back to default core clk rate */
 			clk_set_rate(mdwc->core_clk, mdwc->core_clk_rate);
