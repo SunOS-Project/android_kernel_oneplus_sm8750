@@ -12,6 +12,7 @@ obj-$(CONFIG_PHY_QCOM_QMP_PCIE)		+= phy-qcom-qmp-pcie.o
 obj-$(CONFIG_PHY_QCOM_QMP_PCIE_8996)	+= phy-qcom-qmp-pcie-msm8996.o
 obj-$(CONFIG_PHY_QCOM_QMP_UFS)		+= phy-qcom-qmp-ufs.o
 obj-$(CONFIG_PHY_QCOM_UFS)		+= phy-qcom-ufs.o
+obj-$(CONFIG_PHY_QCOM_UFS_V3)           += phy-qcom-ufs-qmp-v3-660.o
 obj-$(CONFIG_PHY_QCOM_UFS_V4_NIOBE)	+= phy-qcom-ufs-qmp-v4-niobe.o
 obj-$(CONFIG_PHY_QCOM_UFS_V4)		+= phy-qcom-ufs-qmp-v4-pineapple.o
 obj-$(CONFIG_PHY_QCOM_UFS_V4_WAIPIO)	+= phy-qcom-ufs-qmp-v4-waipio.o
