@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2024-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/clk-provider.h>
@@ -54,7 +54,7 @@ static const struct alpha_pll_config gpu_cc_pll0_config = {
 	.config_ctl_val = 0x20485699,
 	.config_ctl_hi_val = 0x00182261,
 	.config_ctl_hi1_val = 0x32aa299c,
-	.user_ctl_val = 0x00000000,
+	.user_ctl_val = 0x00000001,
 	.user_ctl_hi_val = 0x00000805,
 };
 
@@ -93,7 +93,7 @@ static const struct alpha_pll_config gpu_cc_pll1_config = {
 	.config_ctl_val = 0x20485699,
 	.config_ctl_hi_val = 0x00182261,
 	.config_ctl_hi1_val = 0x32aa299c,
-	.user_ctl_val = 0x00000000,
+	.user_ctl_val = 0x00000001,
 	.user_ctl_hi_val = 0x00000805,
 };
 
@@ -258,12 +258,13 @@ static struct clk_rcg2 gpu_cc_gx_gfx3d_clk_src = {
 	.hid_width = 5,
 	.parent_map = gpu_cc_parent_map_2,
 	.freq_tbl = ftbl_gpu_cc_gx_gfx3d_clk_src,
+	.enable_safe_config = true,
 	.clkr.hw.init = &(const struct clk_init_data) {
 		.name = "gpu_cc_gx_gfx3d_clk_src",
 		.parent_data = gpu_cc_parent_data_2,
 		.num_parents = ARRAY_SIZE(gpu_cc_parent_data_2),
 		.flags = CLK_SET_RATE_PARENT,
-		.ops = &clk_rcg2_shared_ops,
+		.ops = &clk_rcg2_ops,
 	},
 	.clkr.vdd_data = {
 		.vdd_classes = gpu_cc_sm4450_regulators,
