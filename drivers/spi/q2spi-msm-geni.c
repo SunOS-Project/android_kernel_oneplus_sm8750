@@ -110,13 +110,14 @@ void __q2spi_dump_ipc(struct q2spi_geni *q2spi, char *prefix,
 void q2spi_dump_ipc_always(struct q2spi_geni *q2spi, char *prefix, char *str, int size)
 {
 	int offset = 0, total_bytes = size;
+	unsigned long flags;
 
 	if (!str) {
 		Q2SPI_DEBUG(q2spi, "%s: Err str is NULL\n", __func__);
 		return;
 	}
 
-	spin_lock(&q2spi->data_dump_lock);
+	spin_lock_irqsave(&q2spi->data_dump_lock, flags);
 	if (q2spi->max_data_dump_size > 0 && size > q2spi->max_data_dump_size)
 		size = q2spi->max_data_dump_size;
 
@@ -127,7 +128,7 @@ void q2spi_dump_ipc_always(struct q2spi_geni *q2spi, char *prefix, char *str, in
 		size -= Q2SPI_DATA_DUMP_SIZE;
 	}
 	__q2spi_dump_ipc(q2spi, prefix, (char *)str + offset, total_bytes, offset, size);
-	spin_unlock(&q2spi->data_dump_lock);
+	spin_unlock_irqrestore(&q2spi->data_dump_lock, flags);
 }
 
 /**
@@ -217,17 +218,18 @@ static ssize_t max_dump_size_store(struct device *dev, struct device_attribute *
 				   const char *buf, size_t size)
 {
 	struct q2spi_geni *q2spi = get_q2spi(dev);
+	unsigned long flags;
 
-	spin_lock(&q2spi->data_dump_lock);
+	spin_lock_irqsave(&q2spi->data_dump_lock, flags);
 	if (kstrtoint(buf, 0, &q2spi->max_data_dump_size)) {
 		dev_err(dev, "%s Invalid input\n", __func__);
-		spin_unlock(&q2spi->data_dump_lock);
+		spin_unlock_irqrestore(&q2spi->data_dump_lock, flags);
 		return -EINVAL;
 	}
 
 	if (q2spi->max_data_dump_size <= 0)
 		q2spi->max_data_dump_size = Q2SPI_DATA_DUMP_SIZE;
-	spin_unlock(&q2spi->data_dump_lock);
+	spin_unlock_irqrestore(&q2spi->data_dump_lock, flags);
 	return size;
 }
 
