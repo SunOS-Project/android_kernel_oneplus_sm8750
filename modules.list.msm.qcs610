@@ -17,6 +17,11 @@ qcom-scm.ko
 pinctrl-msm.ko
 pinctrl-sm6150.ko
 llcc-qcom.ko
+dcvs_fp.ko
+qcom-dcvs.ko
+qcom_llcc_pmu.ko
+qcom-pmu-lib.ko
+sched-walt.ko
 qcom_hwspinlock.ko
 nvmem_qfprom.ko
 secure_buffer.ko
