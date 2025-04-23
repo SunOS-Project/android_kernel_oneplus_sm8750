@@ -39,6 +39,18 @@ config QPNP_SMBLITE
 	 as fuel gauge and USB.
 	 VBUS regulator is registered for supporting OTG.
 
+config SMB1390_CHARGE_PUMP_PSY
+	tristate "SMB1390 power supply framework based driver"
+	depends on MFD_I2C_PMIC && IIO
+	help
+	  Say Y to include support for SMB1390 Charge Pump driver based on
+	  power supply framework.
+	  SMB1390 is a div2 charge pump capable of delivering 6A charge current
+	  with very high efficiency. It can work either as 2s to 1s pre-regulator
+	  or as a companion charger when paired with Qualcomm Technologies, Inc.’s
+	  family of standalone chargers to enable a high current, low profile
+	  Li+ battery charging system.
+
 config QTI_QBG
         tristate "QTI Battery Gauge"
         depends on MFD_SPMI_PMIC && IIO
