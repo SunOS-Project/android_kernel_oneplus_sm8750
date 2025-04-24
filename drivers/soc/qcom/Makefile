@@ -9,6 +9,7 @@ obj-$(CONFIG_QCOM_CRM)	+= crm.o
 obj-$(CONFIG_QCOM_CRM_V2)	+= crm-v2.o
 obj-$(CONFIG_QCOM_GSBI)	+=	qcom_gsbi.o
 obj-$(CONFIG_QCOM_MDT_LOADER)	+= mdt_loader.o
+obj-$(CONFIG_MSM_POWER_STATE) += power_state.o
 obj-$(CONFIG_QCOM_OCMEM)	+= ocmem.o
 obj-$(CONFIG_QCOM_PCIE_PDC)	+= pcie-pdc.o
 obj-$(CONFIG_QCOM_PDR_HELPERS)	+= pdr_interface.o
