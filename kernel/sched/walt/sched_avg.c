@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012, 2015-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 /*
@@ -225,7 +225,9 @@ static inline void update_busy_hyst_end_time(int cpu, int enq,
 	bool hyst_trigger, coloc_trigger;
 	bool dequeue = (enq < 0);
 
-	if (is_max_possible_cluster_cpu(cpu) && is_obet)
+	if (is_max_possible_cluster_cpu(cpu) && is_obet
+			&& (cpumask_weight(&cpu_array[0][num_sched_clusters - 1]) > 1
+			|| !pipeline_in_progress()))
 		return;
 
 	if (!per_cpu(hyst_time, cpu) && !per_cpu(coloc_hyst_time, cpu) &&
