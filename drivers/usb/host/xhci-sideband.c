@@ -159,6 +159,9 @@ xhci_sideband_remove_endpoint(struct xhci_sideband *sb,
 	struct xhci_virt_ep *ep;
 	unsigned int ep_index;
 
+	if (!sb)
+		return -ENODEV;
+
 	mutex_lock(&sb->mutex);
 	ep_index = xhci_get_endpoint_index(&host_ep->desc);
 	ep = sb->eps[ep_index];
