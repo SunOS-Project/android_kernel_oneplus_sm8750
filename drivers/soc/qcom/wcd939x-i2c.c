@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/usb/typec.h>
@@ -1831,6 +1831,14 @@ static int wcd_usbss_probe(struct i2c_client *i2c)
 		regmap_update_bits(priv->regmap, WCD_USBSS_MG2_EN, 0x2, 0x0);
 	}
 	priv->version = ver;
+
+	/* SET LINIERIZER TAP registers to default to gaurantee */
+	/* good THD+N and intermodulation performance. */
+
+	regmap_write(priv->regmap, WCD_USBSS_EXT_SW_CTRL_1, 0x0);
+	regmap_write(priv->regmap, WCD_USBSS_SW_TAP_GND_L_LSB, 0x0);
+	regmap_write(priv->regmap, WCD_USBSS_SW_TAP_GND_R_LSB, 0x0);
+	regmap_write(priv->regmap, WCD_USBSS_FUNCTION_ENABLE, 0x05);
 
 	devm_regmap_qti_debugfs_register(priv->dev, priv->regmap);
 
