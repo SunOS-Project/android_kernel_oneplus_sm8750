@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/debugfs.h>
@@ -255,6 +255,7 @@ static int smblite_chg_config_init(struct smblite *chip)
 #define DEFAULT_FCC_STEP_SIZE_UA	100000
 #define DEFAULT_FCC_STEP_UPDATE_DELAY_MS	1000
 #define DEFAULT_FCC_STEP_START_UA	500000
+#define DEFAULT_CHG_BST_PULLDOWN_DURATION_MS	50
 static int smblite_parse_dt_misc(struct smblite *chip, struct device_node *node)
 {
 	int rc = 0, byte_len;
@@ -335,6 +336,16 @@ static int smblite_parse_dt_misc(struct smblite *chip, struct device_node *node)
 
 	chg->concurrent_mode_supported = of_property_read_bool(node,
 					"qcom,concurrency-mode-supported");
+
+	if (of_property_read_bool(node, "qcom,chg-bst-pulldown-wa")) {
+		chg->wa_flags |= CHG_BST_PULLDOWN_WA;
+		rc = of_property_read_u32(node,
+				"qcom,chg-bst-pulldown-wa-duration-ms",
+				&chg->chg_bst_pulldown_wa_duration_ms);
+		if (rc < 0)
+			chg->chg_bst_pulldown_wa_duration_ms =
+				DEFAULT_CHG_BST_PULLDOWN_DURATION_MS;
+	}
 
 	rc = of_property_read_u32(node, "qcom,float-option",
 						&chip->dt.float_option);
