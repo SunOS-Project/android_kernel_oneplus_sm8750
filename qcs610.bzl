@@ -237,6 +237,7 @@ def define_qcs610():
         "net/tipc/diag.ko",
         "net/tipc/tipc.ko",
         "net/vmw_vsock/vmw_vsock_virtio_transport.ko",
+        "net/wireless/cfg80211.ko",
         "sound/soc/soc-topology-test.ko",
         "sound/soc/soc-utils-test.ko",
     ]
