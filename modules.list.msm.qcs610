@@ -12,6 +12,7 @@ mem_buf_dev.ko
 smem.ko
 qcom-reboot-reason.ko
 qcom_wdt_core.ko
+qcom-dload-mode.ko
 qcom_soc_wdt.ko
 memory_dump_v2.ko
 qcom-scm.ko
