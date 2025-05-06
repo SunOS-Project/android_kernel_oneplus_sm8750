@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef __LINUX_USB_DWC3_MSM_H
@@ -23,6 +23,7 @@
 #define PHY_SUS_OVERRIDE		BIT(8)
 #define PHY_DP_MODE			BIT(9)
 #define PHY_USB_DP_CONCURRENT_MODE	BIT(10)
+#define PHY_SS_PHY_DYNAMIC_POWERDOWN	BIT(11)
 
 /*
  * The following are bit fields describing the USB BAM options.
