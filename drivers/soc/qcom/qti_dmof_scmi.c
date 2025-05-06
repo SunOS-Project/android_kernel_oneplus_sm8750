@@ -20,6 +20,7 @@
 #include <linux/slab.h>
 #include <linux/wait.h>
 #include <uapi/linux/sched/types.h>
+#include <linux/cpu_phys_log_map.h>
 
 #define DMOF_ALGO_STR	(0x444D4F46) /* DMOF (Disable Memcpy Optimization Feature) ASCII */
 
@@ -185,7 +186,7 @@ repeat:
 
 		BUG_ON(smp_processor_id() != cpu);
 
-		buf[0] = cpu;
+		buf[0] = cpu_logical_to_phys(cpu);
 		switch (fds->cmd) {
 		case COMMAND_INIT:
 			break;
