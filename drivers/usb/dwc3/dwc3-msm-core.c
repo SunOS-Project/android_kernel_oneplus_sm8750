@@ -580,8 +580,7 @@ struct dwc3_msm {
 	unsigned long		lpm_flags;
 	unsigned int		vbus_draw;
 #define MDWC3_SS_PHY_SUSPEND		BIT(0)
-#define MDWC3_ASYNC_IRQ_WAKE_CAPABILITY	BIT(1)
-#define MDWC3_POWER_COLLAPSE		BIT(2)
+#define MDWC3_POWER_COLLAPSE		BIT(1)
 
 	struct extcon_nb	*extcon;
 	int			ext_idx;
@@ -4145,10 +4144,23 @@ static int dwc3_msm_check_suspend(struct dwc3_msm *mdwc)
 	return 0;
 }
 
+static void dwc3_msm_interrupt_enable(struct dwc3_msm *mdwc, bool enable)
+{
+	if ((!enable) || (enable && (mdwc->in_device_mode || mdwc->in_host_mode))) {
+		if (mdwc->use_pdc_interrupts) {
+			enable_usb_pdc_interrupt(mdwc, enable);
+		} else {
+			configure_nonpdc_usb_interrupt(mdwc,
+					&mdwc->wakeup_irq[HS_PHY_IRQ], enable);
+			configure_nonpdc_usb_interrupt(mdwc,
+					&mdwc->wakeup_irq[SS_PHY_IRQ], enable);
+		}
+	}
+}
+
 static int dwc3_msm_suspend(struct dwc3_msm *mdwc, bool force_power_collapse)
 {
 	int ret;
-	struct usb_irq *uirq;
 	struct dwc3 *dwc = NULL;
 	bool can_suspend_ssphy, no_active_ss;
 
@@ -4267,17 +4279,7 @@ static int dwc3_msm_suspend(struct dwc3_msm *mdwc, bool force_power_collapse)
 	 * using HS_PHY_IRQ or SS_PHY_IRQ. Hence enable wakeup only in
 	 * case of host bus suspend and device bus suspend.
 	 */
-	if (mdwc->in_device_mode || mdwc->in_host_mode) {
-		if (mdwc->use_pdc_interrupts) {
-			enable_usb_pdc_interrupt(mdwc, true);
-		} else {
-			uirq = &mdwc->wakeup_irq[HS_PHY_IRQ];
-			configure_nonpdc_usb_interrupt(mdwc, uirq, true);
-			uirq = &mdwc->wakeup_irq[SS_PHY_IRQ];
-			configure_nonpdc_usb_interrupt(mdwc, uirq, true);
-		}
-		mdwc->lpm_flags |= MDWC3_ASYNC_IRQ_WAKE_CAPABILITY;
-	}
+	dwc3_msm_interrupt_enable(mdwc, true);
 
 	dev_info(mdwc->dev, "DWC3 in low power mode\n");
 	dbg_event(0xFF, "Ctl Sus", atomic_read(&mdwc->in_lpm));
@@ -4295,7 +4297,6 @@ static int dwc3_msm_resume(struct dwc3_msm *mdwc)
 {
 	int ret;
 	struct dwc3 *dwc = NULL;
-	struct usb_irq *uirq;
 
 	if (mdwc->dwc3)
 		dwc = platform_get_drvdata(mdwc->dwc3);
@@ -4431,18 +4432,7 @@ static int dwc3_msm_resume(struct dwc3_msm *mdwc)
 				~DWC3_GUSB2PHYCFG_SUSPHY);
 
 	/* Disable wakeup capable for HS_PHY IRQ & SS_PHY_IRQ if enabled */
-	if (mdwc->lpm_flags & MDWC3_ASYNC_IRQ_WAKE_CAPABILITY) {
-		if (mdwc->use_pdc_interrupts) {
-			enable_usb_pdc_interrupt(mdwc, false);
-		} else {
-			uirq = &mdwc->wakeup_irq[HS_PHY_IRQ];
-			configure_nonpdc_usb_interrupt(mdwc, uirq, false);
-			uirq = &mdwc->wakeup_irq[SS_PHY_IRQ];
-			configure_nonpdc_usb_interrupt(mdwc, uirq, false);
-		}
-		mdwc->lpm_flags &= ~MDWC3_ASYNC_IRQ_WAKE_CAPABILITY;
-	}
-
+	dwc3_msm_interrupt_enable(mdwc, false);
 	dev_info(mdwc->dev, "DWC3 exited from low power mode\n");
 
 	/*
