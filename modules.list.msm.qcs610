@@ -4,6 +4,7 @@ clk-rpmh.ko
 clk-dummy.ko
 clk-qcom.ko
 arm_smmu.ko
+qcom_iommu_util.ko
 smem.ko
 qcom_wdt_core.ko
 qcom_soc_wdt.ko
