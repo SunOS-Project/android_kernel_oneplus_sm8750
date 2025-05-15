@@ -30,6 +30,10 @@ qcom-cpufreq-hw.ko
 phy-qcom-ufs.ko
 phy-qcom-ufs-qmp-v3-660.ko
 ufs-qcom.ko
+clk-spmi-pmic-div.ko
+qcom-spmi-pmic.ko
+spmi-pmic-arb.ko
+rtc-pm8xxx.ko
 ufshcd-crypto-qti.ko
 sdhci-msm.ko
 cqhci.ko
