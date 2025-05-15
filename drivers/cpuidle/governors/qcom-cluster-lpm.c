@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/cpu.h>
@@ -382,6 +382,9 @@ static int cluster_power_cb(struct notifier_block *nb,
 	case GENPD_NOTIFY_PRE_OFF:
 		if (!pd->gd)
 			return NOTIFY_BAD;
+
+		if (!cpumask_intersects(cluster_gov->genpd->cpus, cpu_online_mask))
+			return NOTIFY_OK;
 
 		if (!cluster_gov->state_allowed[pd->state_idx])
 			return NOTIFY_BAD;

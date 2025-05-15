@@ -498,6 +498,17 @@ static const struct llcc_slice_config sun_data[] = {
 						1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 };
 
+static const struct llcc_slice_config sm6150_data[] = {
+	{LLCC_CPUSS,    1, 128, 1, 0, 0xFFFFFF, 0x0, 0, 0, 0, 1, 1, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{LLCC_MDM,      8, 256, 0, 1, 0xFFFFFF, 0x0, 0, 0, 0, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{LLCC_GPUHTW,   11, 128, 1, 1, 0xFFFFFF, 0x0, 0, 0, 0, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{LLCC_GPU,      12, 128, 1, 0, 0xFFFFFF, 0x0, 0, 0, 0, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+};
+
 static const struct llcc_slice_config tuna_data[] = {
 	{LLCC_CPUSS,     1, 4992, 1, 0, 0xFFFFFF,
 			0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -897,6 +908,14 @@ static const struct qcom_llcc_config sun_cfg = {
 	.edac_reg_offset = &llcc_v6_edac_reg_offset,
 };
 
+static const struct qcom_llcc_config sm6150_cfg = {
+	.sct_data       = sm6150_data,
+	.size           = ARRAY_SIZE(sm6150_data),
+	.need_llcc_cfg  = true,
+	.reg_offset     = llcc_v1_reg_offset,
+	.edac_reg_offset = &llcc_v1_edac_reg_offset,
+};
+
 static const struct qcom_llcc_config tuna_cfg = {
 	.sct_data = tuna_data,
 	.size = ARRAY_SIZE(tuna_data),
@@ -981,6 +1000,7 @@ EXPORT_SYMBOL_GPL(llcc_slice_putd);
 static int llcc_update_act_ctrl(u32 sid,
 				u32 act_ctrl_reg_val, u32 status)
 {
+	struct regmap *regmap;
 	u32 act_ctrl_reg;
 	u32 act_clear_reg;
 	u32 status_reg;
@@ -1009,7 +1029,8 @@ static int llcc_update_act_ctrl(u32 sid,
 		return ret;
 
 	if (drv_data->version >= LLCC_VERSION_4_1_0_0) {
-		ret = regmap_read_poll_timeout(drv_data->bcast_and_regmap, status_reg,
+		regmap = drv_data->bcast_and_regmap ?: drv_data->bcast_regmap;
+		ret = regmap_read_poll_timeout(regmap, status_reg,
 				      slice_status, (slice_status & ACT_COMPLETE),
 				      0, LLCC_STATUS_READ_DELAY);
 		if (ret)
@@ -1725,10 +1746,17 @@ static int qcom_llcc_probe(struct platform_device *pdev)
 		goto err;
 	}
 
-	drv_data->bcast_and_regmap = qcom_llcc_init_mmio(pdev, i+1, "llcc_broadcast_and_base");
-	if (IS_ERR(drv_data->bcast_and_regmap)) {
-		ret = PTR_ERR(drv_data->bcast_and_regmap);
-		goto err;
+	/* Applicable only when drv_data->version >= 4.1 */
+	if (drv_data->version >= LLCC_VERSION_4_1_0_0) {
+		drv_data->bcast_and_regmap = qcom_llcc_init_mmio(pdev, i+1,
+							"llcc_broadcast_and_base");
+		if (IS_ERR(drv_data->bcast_and_regmap)) {
+			ret = PTR_ERR(drv_data->bcast_and_regmap);
+			if (ret == -EINVAL)
+				drv_data->bcast_and_regmap = NULL;
+			else
+				goto err;
+		}
 	}
 
 	/* Extract version of the IP */
@@ -1814,6 +1842,7 @@ static const struct of_device_id qcom_llcc_of_match[] = {
 	{ .compatible = "qcom,kera-llcc", .data = &kera_cfg },
 	{ .compatible = "qcom,x1e80100-llcc", .data = &x1e80100_cfg },
 	{ .compatible = "qcom,sdxpinn-llcc", .data = &sdxpinn_cfg },
+	{ .compatible = "qcom,sm6150-llcc", .data = &sm6150_cfg },
 	{ }
 };
 MODULE_DEVICE_TABLE(of, qcom_llcc_of_match);

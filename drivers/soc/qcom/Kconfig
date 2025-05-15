@@ -211,6 +211,15 @@ config QCOM_MDT_LOADER
 	tristate
 	select QCOM_SCM
 
+config MSM_POWER_STATE
+	tristate "Power State driver support for Deep Sleep and Hibernate"
+	help
+	  This option enables Power State Driver which is the kernel component
+	  for supporting deep sleep and hibernate. Create a power_state device
+	  node for user space communication. User space client can open device
+	  node for communication required for handling deep sleep and hibernate
+	  modes.
+
 config QCOM_OCMEM
 	tristate "Qualcomm On Chip Memory (OCMEM) driver"
 	depends on ARCH_QCOM
@@ -686,6 +695,15 @@ config QCOM_ADSP_SLEEPMON
 	   activity notifications from these userspace clients, the driver
 	   detects and logs sleep violations from ADSP subsystem. The driver
 	   uses master stats from ADSP subsystem stored in SMEM.
+
+config USB_BAM
+        tristate "USB BAM Driver"
+	depends on SPS && USB_GADGET
+        help
+          Enabling this option adds USB BAM Driver.
+          USB BAM driver was added to supports Smart Peripheral Subsystem
+          Peripheral-to-Peripheral transfers between the USB and other
+          peripheral.
 
 config QCOM_CPU_VENDOR_HOOKS
         tristate "QTI Vendor Hooks Support"

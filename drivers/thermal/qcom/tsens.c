@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2015, The Linux Foundation. All rights reserved.
  * Copyright (c) 2019, 2020, Linaro Ltd.
- * Copyright (c) 2021-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2024, 2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/debugfs.h>
@@ -298,16 +298,47 @@ static int tsens_hw_to_mC(const struct tsens_sensor *s, int field)
 {
 	struct tsens_priv *priv = s->priv;
 	u32 resolution;
-	u32 temp = 0;
-	int ret;
+	u32 temp = 0, temp1 = 0, temp2 = 0, temp3 = 0;
+	unsigned int status = 0;
+	int ret = 0;
 
 	resolution = priv->fields[LAST_TEMP_0].msb -
 		priv->fields[LAST_TEMP_0].lsb;
 
-	ret = regmap_field_read(priv->rf[field], &temp);
+	ret = regmap_field_read(priv->rf[field], &status);
 	if (ret)
 		return ret;
 
+	temp1 = status & TM_LAST_TEMP_BIT_MASK;
+	if (status & TM_SN_STATUS_VALID_BIT) {
+		temp = temp1;
+		goto convert;
+	}
+	ret = regmap_field_read(priv->rf[field], &status);
+	if (ret)
+		return ret;
+
+	temp2 = status & TM_LAST_TEMP_BIT_MASK;
+	if (status & TM_SN_STATUS_VALID_BIT) {
+		temp = temp2;
+		goto convert;
+	}
+	ret = regmap_field_read(priv->rf[field], &status);
+	if (ret)
+		return ret;
+
+	temp3 = status & TM_LAST_TEMP_BIT_MASK;
+	if (status & TM_SN_STATUS_VALID_BIT) {
+		temp = temp3;
+		goto convert;
+	}
+
+	if (temp1 == temp2)
+		temp = temp2;
+	else if (temp2 == temp3)
+		temp = temp3;
+
+convert:
 	/* Convert temperature from ADC code to milliCelsius */
 	if (priv->feat->adc)
 		return code_to_degc(temp, s) * 1000;
@@ -1307,6 +1338,9 @@ static const struct of_device_id tsens_table[] = {
 	}, {
 		.compatible = "qcom,msm8916-tsens",
 		.data = &data_8916,
+	}, {
+		.compatible = "qcom,msm8937-tsens",
+		.data = &data_8937,
 	}, {
 		.compatible = "qcom,msm8939-tsens",
 		.data = &data_8939,

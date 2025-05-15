@@ -127,6 +127,15 @@ config PHY_QCOM_UFS
 
 if PHY_QCOM_UFS
 
+config PHY_QCOM_UFS_V3
+	tristate "Qualcomm Technologies, Inc. UFS V3"
+	depends on PHY_QCOM_UFS
+	help
+	  Enables support for UFS PHY on Qualcomm Technologies, Inc.
+	  chipsets.
+	  Support for 11nm UFS QMP phy present on QCOM chipsets.
+	  This is required to enable UFS on qcs610 chipset.
+
 config PHY_QCOM_UFS_V4
 	tristate "Qualcomm Technologies, Inc. UFS V4"
 	depends on PHY_QCOM_UFS

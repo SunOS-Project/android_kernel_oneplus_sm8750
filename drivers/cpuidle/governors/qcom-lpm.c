@@ -3,7 +3,7 @@
  * Copyright (C) 2006-2007 Adam Belay <abelay@novell.com>
  * Copyright (C) 2009 Intel Corporation
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/cpu.h>
@@ -444,6 +444,12 @@ static int lpm_offline_cpu(unsigned int cpu)
 	if (!dev || !cpu_gov)
 		return 0;
 
+	cpu_gov->next_wakeup = KTIME_MAX - 1;
+	cpu_gov->cpu_off_invoked = true;
+
+	if (cluster_gov_ops && cluster_gov_ops->select)
+		cluster_gov_ops->select(cpu_gov);
+
 	dev_pm_qos_remove_notifier(dev, &cpu_gov->nb,
 				   DEV_PM_QOS_RESUME_LATENCY);
 
@@ -458,6 +464,7 @@ static int lpm_online_cpu(unsigned int cpu)
 	if (!dev || !cpu_gov)
 		return 0;
 
+	cpu_gov->cpu_off_invoked = false;
 	cpu_gov->nb.notifier_call = lpm_cpu_qos_notify;
 	dev_pm_qos_add_notifier(dev, &cpu_gov->nb,
 				DEV_PM_QOS_RESUME_LATENCY);
@@ -585,6 +592,9 @@ static int lpm_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 	int i = 0;
 
 	if (!cpu_gov)
+		return 0;
+
+	if (cpu_gov->cpu_off_invoked)
 		return 0;
 
 	do_div(latency_req, NSEC_PER_USEC);

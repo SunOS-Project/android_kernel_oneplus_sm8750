@@ -2436,6 +2436,29 @@ static void gsi_configure_ep(struct usb_ep *ep, struct usb_gsi_request *request)
 		dwc3_msm_write_reg(mdwc->base, DWC3_DALEPENA, reg);
 	}
 
+	/* Transfer resource already allocated for EP */
+	if (dep->flags & DWC3_EP_RESOURCE_ALLOCATED)
+		return;
+
+	/*
+	 * Issue set xfer resource here, as DWC3 gadget modified the sequence
+	 * of commands done during dwc3_gadget_start_config().  Previously,
+	 * when dwc3_gadget_start_config() was called, the set xfer resource
+	 * command was issued for every EP.
+	 *    commit b311048c174d("usb: dwc3: gadget: Rewrite endpoint
+	 *                         allocation flow"
+	 *
+	 * The commit adjusts the sequence to issue set xfer resource on every
+	 * ep enable call instead.  Add this operation to the GSI ep enable call.
+	 */
+	memset(&params, 0x00, sizeof(params));
+
+	params.param0 = DWC3_DEPXFERCFG_NUM_XFER_RES(1);
+
+	dwc3_core_send_gadget_ep_cmd(dep, DWC3_DEPCMD_SETTRANSFRESOURCE,
+			&params);
+
+	dep->flags |= DWC3_EP_RESOURCE_ALLOCATED;
 }
 
 /**
@@ -4347,8 +4370,8 @@ static int dwc3_msm_resume(struct dwc3_msm *mdwc)
 	if (dwc3_msm_get_max_speed(mdwc) >= USB_SPEED_SUPER &&
 			mdwc->lpm_flags & MDWC3_SS_PHY_SUSPEND) {
 		dwc3_set_ssphy_orientation_flag(mdwc);
-		if (!mdwc->in_host_mode || mdwc->disable_host_ssphy_powerdown ||
-			(mdwc->in_host_mode && mdwc->max_rh_port_speed != USB_SPEED_HIGH))
+
+		if (!(mdwc->ss_phy->flags & PHY_SS_PHY_DYNAMIC_POWERDOWN))
 			usb_phy_set_suspend(mdwc->ss_phy, 0);
 
 		mdwc->ss_phy->flags &= ~DEVICE_IN_SS_MODE;
@@ -6544,6 +6567,12 @@ static int dwc3_msm_host_ss_powerdown(struct dwc3_msm *mdwc)
 {
 	u32 reg;
 
+	/*
+	 * Conditions for allowing dynamic powerdown of the SS PHY:
+	 *   1. The feature is not disabled by the DT property
+	 *   2. Not currently in a DP active state
+	 *   3. Connected device's speed is not super-speed
+	 */
 	if (mdwc->disable_host_ssphy_powerdown || mdwc->dp_state ||
 		dwc3_msm_get_max_speed(mdwc) < USB_SPEED_SUPER)
 		return 0;
@@ -6556,6 +6585,7 @@ static int dwc3_msm_host_ss_powerdown(struct dwc3_msm *mdwc)
 	usb_phy_notify_disconnect(mdwc->ss_phy,
 					USB_SPEED_SUPER);
 	usb_phy_set_suspend(mdwc->ss_phy, 1);
+	mdwc->ss_phy->flags |= PHY_SS_PHY_DYNAMIC_POWERDOWN;
 
 	return 0;
 }
@@ -6578,13 +6608,14 @@ static int dwc3_msm_host_ss_powerup(struct dwc3_msm *mdwc)
 	reg = dwc3_msm_read_reg(mdwc->base, EXTRA_INP_REG);
 	reg &= ~EXTRA_INP_SS_DISABLE;
 	dwc3_msm_write_reg(mdwc->base, EXTRA_INP_REG, reg);
+	mdwc->ss_phy->flags &= ~PHY_SS_PHY_DYNAMIC_POWERDOWN;
 
 	return 0;
 }
 
 static int usb_audio_pre_reset(struct usb_interface *intf)
 {
-	return 1;
+	return 0;
 }
 
 static int usb_audio_post_reset(struct usb_interface *intf)
@@ -6701,11 +6732,8 @@ static int dwc3_msm_host_notifier(struct notifier_block *nb,
 					wcd_usbss_dpdm_switch_update(true,
 							udev->speed == USB_SPEED_HIGH);
 				dwc3_msm_update_interfaces(udev);
-			} else {
-				if (mdwc->max_rh_port_speed < USB_SPEED_SUPER)
-					dwc3_msm_host_ss_powerup(mdwc);
+			} else
 				mdwc->max_rh_port_speed = USB_SPEED_SUPER;
-			}
 		} else {
 			/* set rate back to default core clk rate */
 			clk_set_rate(mdwc->core_clk, mdwc->core_clk_rate);
@@ -6964,6 +6992,14 @@ static int dwc3_otg_start_host(struct dwc3_msm *mdwc, int on)
 			dwc3_msm_host_ss_powerup(mdwc);
 			dwc3_msm_clear_dp_only_params(mdwc);
 		}
+
+		/*
+		 * Need to explicitly clear here, as changes were made to avoid
+		 * running dwc3_msm_host_ss_powerup on host mode teardown, due to
+		 * subsequent USB enumeration issues when moving from 4LN DP to
+		 * device mode.
+		 */
+		mdwc->ss_phy->flags &= ~PHY_SS_PHY_DYNAMIC_POWERDOWN;
 
 		/*
 		 * Performing phy disconnect before flush work to
