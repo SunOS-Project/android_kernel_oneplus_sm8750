@@ -2,16 +2,26 @@
 // Copyright (c) 2018-19, Linaro Limited
 /* Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved. */
 
+#include <linux/debugfs.h>
+#include <linux/io.h>
+#include <linux/iopoll.h>
+#include <linux/ipc_logging.h>
+#include <linux/mii.h>
 #include <linux/module.h>
 #include <linux/of.h>
+#include <linux/of_gpio.h>
+#include <linux/of_mdio.h>
 #include <linux/of_net.h>
 #include <linux/platform_device.h>
 #include <linux/phy.h>
 #include <linux/phy/phy.h>
+#include <linux/poll.h>
 #include <linux/regulator/consumer.h>
+#include <linux/slab.h>
 
 #include "dwmac-qcom-ethqos.h"
 #include "stmmac_platform.h"
+#include "stmmac_ptp.h"
 
 #define EMAC_SYSTEM_LOW_POWER_DEBUG	0x28
 #define EMAC_WRAPPER_SGMII_PHY_CNTRL1	0xf4
@@ -79,6 +89,27 @@
 #define SGMII_10M_RX_CLK_DVDR			0x31
 
 #define EMAC_I0_EMAC_CORE_HW_VERSION_RGOFFADDR 0x00000070
+
+#define MII_BUSY 0x00000001
+#define MII_WRITE 0x00000002
+
+/* GMAC4 defines */
+#define MII_GMAC4_GOC_SHIFT		2
+#define MII_GMAC4_WRITE			BIT(MII_GMAC4_GOC_SHIFT)
+#define MII_GMAC4_READ			(3 << MII_GMAC4_GOC_SHIFT)
+
+#define MII_BUSY 0x00000001
+#define MII_WRITE 0x00000002
+
+#define DWC_ETH_QOS_PHY_INTR_STATUS     0x0013
+
+#define LINK_UP 1
+#define LINK_DOWN 0
+
+#define LINK_DOWN_STATE 0x800
+#define LINK_UP_STATE 0x400
+
+bool phy_intr_en;
 
 static int rgmii_readl(struct qcom_ethqos *ethqos, unsigned int offset)
 {
@@ -703,6 +734,102 @@ static void ethqos_ptp_clk_freq_config(struct stmmac_priv *priv)
 	netdev_dbg(priv->dev, "PTP rate %d\n", plat_dat->clk_ptp_rate);
 }
 
+static int ethqos_mdio_read(struct stmmac_priv  *priv, int phyaddr, int phyreg)
+{
+	unsigned int mii_address = priv->hw->mii.addr;
+	unsigned int mii_data = priv->hw->mii.data;
+	u32 v;
+	int data;
+	u32 value = MII_BUSY;
+
+	value |= (phyaddr << priv->hw->mii.addr_shift)
+		& priv->hw->mii.addr_mask;
+	value |= (phyreg << priv->hw->mii.reg_shift) & priv->hw->mii.reg_mask;
+	value |= (priv->clk_csr << priv->hw->mii.clk_csr_shift)
+		& priv->hw->mii.clk_csr_mask;
+	if (priv->plat->has_gmac4)
+		value |= MII_GMAC4_READ;
+
+	if (readl_poll_timeout(priv->ioaddr + mii_address, v, !(v & MII_BUSY),
+			       100, 10000))
+		return -EBUSY;
+
+	writel_relaxed(value, priv->ioaddr + mii_address);
+
+	if (readl_poll_timeout(priv->ioaddr + mii_address, v, !(v & MII_BUSY),
+			       100, 10000))
+		return -EBUSY;
+
+	/* Read the data from the MII data register */
+	data = (int)readl_relaxed(priv->ioaddr + mii_data);
+
+	return data;
+}
+
+static int ethqos_phy_intr_config(struct qcom_ethqos *ethqos)
+{
+	int ret = 0;
+
+	ethqos->phy_intr = platform_get_irq_byname(ethqos->pdev, "phy-intr");
+
+	if (ethqos->phy_intr < 0) {
+		dev_err(&ethqos->pdev->dev,
+			"PHY IRQ configuration information not found\n");
+		ret = 1;
+	}
+
+	return ret;
+}
+
+static void ethqos_handle_phy_interrupt(struct qcom_ethqos *ethqos)
+{
+	int phy_intr_status = 0;
+	struct platform_device *pdev = ethqos->pdev;
+
+	struct net_device *dev = platform_get_drvdata(pdev);
+	struct stmmac_priv *priv = netdev_priv(dev);
+
+	phy_intr_status = ethqos_mdio_read(priv, priv->plat->phy_addr,
+					   DWC_ETH_QOS_PHY_INTR_STATUS);
+
+	if (phy_intr_status & LINK_UP_STATE)
+		phylink_mac_change(priv->phylink, LINK_UP);
+	else if (phy_intr_status & LINK_DOWN_STATE)
+		phylink_mac_change(priv->phylink, LINK_DOWN);
+}
+
+static void ethqos_defer_phy_isr_work(struct work_struct *work)
+{
+	struct qcom_ethqos *ethqos =
+		container_of(work, struct qcom_ethqos, emac_phy_work);
+
+	ethqos_handle_phy_interrupt(ethqos);
+}
+
+static irqreturn_t ethqos_phy_isr(int irq, void *dev_data)
+{
+	struct qcom_ethqos *ethqos = (struct qcom_ethqos *)dev_data;
+
+	queue_work(system_wq, &ethqos->emac_phy_work);
+	return IRQ_HANDLED;
+}
+
+static int ethqos_phy_intr_enable(struct qcom_ethqos *ethqos)
+{
+	int ret = 0;
+
+	INIT_WORK(&ethqos->emac_phy_work, ethqos_defer_phy_isr_work);
+	ret = request_irq(ethqos->phy_intr, ethqos_phy_isr,
+			  IRQF_SHARED, "stmmac", ethqos);
+	if (ret) {
+		ETHQOSERR("Unable to register PHY IRQ %d\n",
+			  ethqos->phy_intr);
+		return ret;
+	}
+	phy_intr_en = true;
+	return ret;
+}
+
 static int qcom_ethqos_probe(struct platform_device *pdev)
 {
 	struct device_node *np = pdev->dev.of_node;
@@ -771,15 +898,19 @@ static int qcom_ethqos_probe(struct platform_device *pdev)
 
 	ret = ethqos_init_regulators(ethqos);
 	if (ret)
-		return ret;
+		goto err;
+
+	ret = ethqos_init_gpio(ethqos);
+	if (ret)
+		goto err;
 
 	ret = ethqos_clks_config(ethqos, true);
 	if (ret)
-		return ret;
+		goto err;
 
 	ret = devm_add_action_or_reset(dev, ethqos_clks_disable, ethqos);
 	if (ret)
-		return ret;
+		goto err;
 
 	ethqos->serdes_phy = devm_phy_optional_get(dev, "serdes");
 	if (IS_ERR(ethqos->serdes_phy))
@@ -815,7 +946,19 @@ static int qcom_ethqos_probe(struct platform_device *pdev)
 	ethqos->emac_ver =
 		rgmii_readl(ethqos, EMAC_I0_EMAC_CORE_HW_VERSION_RGOFFADDR);
 
+	if (!ethqos_phy_intr_config(ethqos)) {
+		ret = ethqos_phy_intr_enable(ethqos);
+		if (ret)
+			ETHQOSERR("ethqos_phy_intr_enable failed\n");
+	} else {
+		ETHQOSERR("Phy interrupt configuration failed\n");
+	}
+
 	return devm_stmmac_pltfr_probe(pdev, plat_dat, &stmmac_res);
+
+err:
+	rgmii_dump(ethqos);
+	return ret;
 }
 
 static int qcom_ethqos_remove(struct platform_device *pdev)
@@ -826,6 +969,9 @@ static int qcom_ethqos_remove(struct platform_device *pdev)
 	ethqos = get_stmmac_bsp_priv(&pdev->dev);
 	if (!ethqos)
 		return -ENODEV;
+
+	if (phy_intr_en)
+		free_irq(ethqos->phy_intr, ethqos);
 
 	ethqos_disable_regulators(ethqos);
 	ethqos_clks_config(ethqos, false);
