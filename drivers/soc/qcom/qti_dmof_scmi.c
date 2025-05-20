@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2024-2025, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/cpu.h>
@@ -56,7 +56,6 @@ struct qcom_dmof_dd {
 static DEFINE_PER_CPU(bool, cpu_is_on);
 static DEFINE_PER_CPU(bool, need_ack);
 static struct qcom_dmof_dd *qcom_dmof_dd;
-static struct platform_device *qcom_dmof_pdev;
 
 static ssize_t disable_memcpy_optimization_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
@@ -184,7 +183,8 @@ repeat:
 		if (fds->ret < 0)
 			break;
 
-		BUG_ON(smp_processor_id() != cpu);
+		BUG_ON(get_cpu() != cpu);
+		put_cpu();
 
 		buf[0] = cpu_logical_to_phys(cpu);
 		switch (fds->cmd) {
@@ -270,8 +270,12 @@ static int cpu_down_notifier(unsigned int cpu)
 static int cpu_up_notifier(unsigned int cpu)
 {
 	struct qcom_dmof_dd *fds = qcom_dmof_dd;
+	struct task_struct *tsk;
 
 	mutex_lock(&fds->lock);
+	tsk = fds->store[cpu];
+	kthread_bind_mask(tsk, cpumask_of(cpu));
+
 	if (fds->curr_val[cpu] == fds->val)
 		goto cpu_on;
 
@@ -393,33 +397,20 @@ static int qcom_dmof_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static struct platform_driver qcom_dmof_driver = {
-	.driver = {
-		.name = "qcom-dmof",
-	},
-	.probe = qcom_dmof_probe,
+static const struct of_device_id qcom_dmof_match[] = {
+	{ .compatible = "qcom,dmof"},
+	{}
 };
 
-static int __init qcom_dmof_scmi_driver_init(void)
-{
-	int err;
+static struct platform_driver qcom_dmof_driver = {
+	.probe = qcom_dmof_probe,
+	.driver         = {
+		.name   = "qcom-dmof",
+		.of_match_table = qcom_dmof_match,
+	},
+};
 
-	err = platform_driver_register(&qcom_dmof_driver);
-	if (err)
-		return err;
-
-	qcom_dmof_pdev = platform_device_register_data(NULL, "qcom-dmof",
-						       PLATFORM_DEVID_NONE, NULL, 0);
-	if (IS_ERR(qcom_dmof_pdev)) {
-		pr_err("failed to register qcom-dmof platform device\n");
-		platform_driver_unregister(&qcom_dmof_driver);
-		return PTR_ERR(qcom_dmof_pdev);
-	}
-
-	return 0;
-}
-
-module_init(qcom_dmof_scmi_driver_init)
+module_platform_driver(qcom_dmof_driver);
 
 MODULE_SOFTDEP("pre: qcom_scmi_client");
 MODULE_DESCRIPTION("QTI DMOF SCMI driver");
