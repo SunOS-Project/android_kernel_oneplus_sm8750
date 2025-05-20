@@ -34,6 +34,7 @@ def define_qcs610():
         "drivers/clk/qcom/gpucc-sm6150.ko",
         "drivers/clk/qcom/videocc-sm6150.ko",
         "drivers/cpufreq/qcom-cpufreq-hw.ko",
+        "drivers/cpuidle/governors/qcom_lpm.ko",
         "drivers/dma-buf/heaps/qcom_dma_heaps.ko",
         "drivers/dma/qcom/bam_dma.ko",
         "drivers/dma/qcom/msm_gpi.ko",
