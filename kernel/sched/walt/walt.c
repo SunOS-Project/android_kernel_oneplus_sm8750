@@ -2165,6 +2165,69 @@ static void update_trailblazer_accounting(struct task_struct *p, struct rq *rq,
 	}
 }
 
+#define MIN_WINDOWS_FOR_LST	3ULL
+#define LST_ACTIVATION_TIMEOUT	250ULL
+#define LST_DELAY_MULTIPLIER	5
+/*
+ * LST detection and timeout flow:
+ * - For > 3 windows didn't receive any event thus marked as LST
+ * - LST timeout
+ * ms                                         ms   ms    ms    ms             ms
+ * |        |         |         |         |    |    |     |     |              |
+ * |        |         |         |         |    |    |     |     |              |
+ * v--------|---------|---------|---------|----v----v-----v-----v--------------v
+ *          |         |         |         |   LST(marked here)
+ *          |         |         |         |    |                           |
+ *       window    window    window    window  |<------------------------->|
+ *          1         2         3         4    |  Task in LST state        |
+ *								        LST timeout
+ */
+static void update_lst(struct walt_task_struct *wts, u64 wallclock,
+		       int new_window)
+{
+	u64 lst_delay_factor;
+	u64 activity_target_hyst_ns = MIN_WINDOWS_FOR_LST * sched_ravg_window;
+
+	if ((wts->mark_start != 0) && ((wts->mark_start + activity_target_hyst_ns) < wallclock)) {
+		/*
+		 * task has been inactive for the threshold period treat it as
+		 * LST task.
+		 */
+		wts->lst = true;
+		wts->lst_state_counter++;
+
+		/* LST delay calculation based on how frequent task was in LST */
+		lst_delay_factor = min((wts->lst_state_counter  + LST_DELAY_MULTIPLIER)  /
+				       LST_DELAY_MULTIPLIER, 10);
+
+		/* target time after which task will come out of LST state */
+		wts->lst_tgt_ns = wallclock +
+			(LST_ACTIVATION_TIMEOUT * MSEC_TO_NSEC * lst_delay_factor);
+		wts->continuous_active = 0;
+	} else {
+		if (wts->lst_tgt_ns && (wts->lst_tgt_ns < wallclock)) {
+			wts->lst = false;
+			wts->lst_tgt_ns = 0;
+		}
+
+		wts->continuous_active++;
+
+		/*
+		 * reduce lst_state_counter for active task if task is active, this in-turn
+		 * influences calculation for LST delay.
+		 */
+		if (wts->continuous_active > 10) {
+			wts->lst_state_counter = max_t(s64, wts->lst_state_counter - 10, 0);
+			wts->continuous_active = 0;
+		}
+	}
+
+	/* tracking the number of windows where a task has encountered an event. */
+	if (new_window)
+		atomic_inc(&wts->event_windows);
+
+}
+
 /*
  * Called when new window is starting for a task, to record cpu usage over
  * recently concluded window(s). Normally 'samples' should be 1. It can be > 1
@@ -2327,6 +2390,7 @@ static u64 update_task_demand(struct task_struct *p, struct rq *rq,
 			       int event, u64 wallclock)
 {
 	struct walt_task_struct *wts = (struct walt_task_struct *) p->android_vendor_data1;
+	struct walt_related_thread_group *rtg = wts->grp;
 	u64 mark_start = wts->mark_start;
 	struct walt_rq *wrq = &per_cpu(walt_rq, cpu_of(rq));
 	u64 delta, window_start = wrq->window_start;
@@ -2335,6 +2399,13 @@ static u64 update_task_demand(struct task_struct *p, struct rq *rq,
 	u64 runtime;
 
 	new_window = mark_start < window_start;
+	/*
+	 * activity count is only used for pipeline filtering
+	 * update activity count only if pipleine is in progress.
+	 */
+	if (pipeline_in_progress() && rtg && rtg->id == DEFAULT_CGROUP_COLOC_ID)
+		update_lst(wts, wallclock, new_window);
+
 	if (!account_busy_for_task_demand(rq, p, event)) {
 		if (new_window)
 			/*
@@ -2746,6 +2817,12 @@ static inline void __sched_fork_init(struct task_struct *p)
 	wts->load_boost		= 0;
 	wts->boosted_task_load	= 0;
 	wts->reduce_mask	= CPU_MASK_ALL;
+	wts->lst		= false;
+	wts->lst_tgt_ns		= 0;
+	wts->lst_state_counter	= 0;
+	wts->continuous_active	= 0;
+	wts->pipeline_activity_cnt = 0;
+	atomic_set(&wts->event_windows, 0);
 }
 
 static void init_new_task_load(struct task_struct *p)
