@@ -232,6 +232,7 @@ def define_qcs610():
 
     _qcs610_debug_in_tree_modules = _qcs610_in_tree_modules + [
         # keep sorted
+        "drivers/misc/lkdtm/lkdtm.ko",
     ]
 
     for variant in le_variants:
