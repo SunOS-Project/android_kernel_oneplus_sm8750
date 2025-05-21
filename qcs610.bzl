@@ -158,6 +158,7 @@ def define_qcs610():
         "drivers/soc/qcom/qmi_helpers.ko",
         "drivers/soc/qcom/qsee_ipc_irq_bridge.ko",
         "drivers/soc/qcom/qti_pmic_glink.ko",
+        "drivers/soc/qcom/rq_stats.ko",
         "drivers/soc/qcom/secure_buffer.ko",
         "drivers/soc/qcom/slatecom_spi.ko",
         "drivers/soc/qcom/smem.ko",
