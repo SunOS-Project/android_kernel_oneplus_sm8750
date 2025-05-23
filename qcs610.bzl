@@ -277,6 +277,7 @@ def define_qcs610():
 
     _qcs610_debug_in_tree_modules = _qcs610_in_tree_modules + [
         # keep sorted
+        "drivers/hwtracing/coresight/coresight-etm4x.ko",
         "drivers/misc/lkdtm/lkdtm.ko",
     ]
 
