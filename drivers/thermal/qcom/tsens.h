@@ -21,8 +21,6 @@
 #define THRESHOLD_MAX_ADC_CODE	0x3ff
 #define THRESHOLD_MIN_ADC_CODE	0x0
 #define COLD_SENSOR_HW_ID	128
-#define TM_SN_STATUS_VALID_BIT		BIT(21)
-#define TM_LAST_TEMP_BIT_MASK		0xFFF
 
 #define MAX_SENSORS 16
 
@@ -578,6 +576,9 @@ enum regfield_ids {
  * @persist_max_min: does this IP support persist max-min data?
  * @trip_min_temp: minimum trip temperature supported by this version of the IP
  * @trip_max_temp: maximum trip temperature supported by this version of the IP
+ * @valid_bit: validate if read temperature is valid or not?
+ * @last_temp_mask: mask register for last temperature
+ * @last_temp_resolution: last temperarure sign bit resolution
  */
 struct tsens_features {
 	unsigned int ver_major;
@@ -591,6 +592,9 @@ struct tsens_features {
 	unsigned int persist_max_min:1;
 	int trip_min_temp;
 	int trip_max_temp;
+	int valid_bit;
+	int last_temp_mask;
+	u32 last_temp_resolution;
 };
 
 /**
