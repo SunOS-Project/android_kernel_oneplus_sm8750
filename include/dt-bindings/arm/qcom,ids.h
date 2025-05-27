@@ -285,6 +285,7 @@
 #define QCOM_ID_PARROTPRO		663
 #define QCOM_ID_PARROTPROP		713
 #define QCOM_ID_PARROTPROQ		714
+#define QCOM_ID_PARROTLITE		715
 #define QCOM_ID_TUNAP                   694
 #define QCOM_ID_QCS610			401
 
