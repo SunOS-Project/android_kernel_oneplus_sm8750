@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/coresight.h>
@@ -69,7 +69,7 @@ static int qmi_assign_dummy_source_atid(struct dummy_drvdata *drvdata)
 	if (ret)
 		return -EINVAL;
 
-	atid_data = kzalloc(sizeof(*atid_data), GFP_KERNEL);
+	atid_data = devm_kzalloc(drvdata->dev, sizeof(*atid_data), GFP_KERNEL);
 	if (!atid_data)
 		return -ENOMEM;
 
