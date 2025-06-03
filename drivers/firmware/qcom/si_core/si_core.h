@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #ifndef __SI_CORE_H__
@@ -170,6 +170,10 @@ static inline void err_to_qtee_err(struct qtee_callback *cb_msg, int err)
 		break;
 	case -ENODEV:
 		cb_msg->result = OBJECT_ERROR_DEFUNCT;
+
+		break;
+	case -EINTR:
+		cb_msg->result = OBJECT_ERROR_ABORT;
 
 		break;
 	case -ENOSPC:
