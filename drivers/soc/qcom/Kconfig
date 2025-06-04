@@ -1063,6 +1063,14 @@ config QCOM_PANEL_EVENT_NOTIFIER
 	  can use these notifications for power saving or align its operations
 	  with display panel power state.
 
+config QCOM_SPMI_PMIC_ERR_DBG
+	tristate "Qualcomm SPMI protocol error IRQ handler"
+	depends on QCOM_SCM
+	help
+	  Enabling this option adds SPMI PMIC error debug driver.
+	  It configures SPMI protocol IRQ to be triggered during SPMI HW error
+	  conditions, to collect and dump several PMIC arbiter registers and
+	  optionally some more debug data from test bus registers.
 
 config QTI_PMIC_GLINK
 	tristate "Enable support for PMIC GLINK"

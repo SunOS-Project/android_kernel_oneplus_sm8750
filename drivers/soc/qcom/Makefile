@@ -91,6 +91,7 @@ obj-$(CONFIG_QCOM_SYSMON_SUBSYSTEM_STATS) += sysmon_subsystem_stats.o
 obj-$(CONFIG_QCOM_CDSP_RM) += cdsprm.o
 obj-$(CONFIG_QCOM_ADSP_SLEEPMON) += adsp_sleepmon.o
 obj-$(CONFIG_QCOM_PANEL_EVENT_NOTIFIER) += panel_event_notifier.o
+obj-$(CONFIG_QCOM_SPMI_PMIC_ERR_DBG) += spmi-pmic-err-debug.o
 obj-$(CONFIG_QTI_PMIC_GLINK) += qti_pmic_glink.o
 obj-$(CONFIG_QTI_ALTMODE_GLINK) += altmode-glink.o
 obj-$(CONFIG_QTI_BATTERY_GLINK_DEBUG) += qti_battery_debug.o
