@@ -1514,6 +1514,7 @@ drivers/of/address.c
 drivers/of/base.c
 drivers/of/cpu.c
 drivers/of/device.c
+drivers/of/empty_root.dts
 drivers/of/fdt.c
 drivers/of/fdt_address.c
 drivers/of/irq.c
@@ -4378,6 +4379,7 @@ include/trace/bpf_probe.h
 include/trace/define_trace.h
 include/trace/events/9p.h
 include/trace/events/alarmtimer.h
+include/trace/events/android_vendor_lmk.h
 include/trace/events/asoc.h
 include/trace/events/avc.h
 include/trace/events/block.h
@@ -4536,6 +4538,7 @@ include/trace/hooks/thermal.h
 include/trace/hooks/timer.h
 include/trace/hooks/topology.h
 include/trace/hooks/traps.h
+include/trace/hooks/typec.h
 include/trace/hooks/ufshcd.h
 include/trace/hooks/usb.h
 include/trace/hooks/user.h
