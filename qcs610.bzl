@@ -39,6 +39,8 @@ def define_qcs610():
         "drivers/dma/qcom/bam_dma.ko",
         "drivers/dma/qcom/msm_gpi.ko",
         "drivers/firmware/qcom-scm.ko",
+        "drivers/gpu/drm/display/drm_display_helper.ko",
+        "drivers/gpu/drm/display/drm_dp_aux_bus.ko",
         "drivers/hid/hid-uclogic-test.ko",
         "drivers/hwspinlock/qcom_hwspinlock.ko",
         "drivers/i2c/busses/i2c-msm-geni.ko",
