@@ -176,6 +176,8 @@ def define_qcs610():
         "drivers/uio/msm_sharedmem/msm_sharedmem.ko",
         "drivers/usb/class/cdc-acm.ko",
         "drivers/usb/dwc3/dwc3-msm.ko",
+        "drivers/usb/gadget/function/usb_f_cdev.ko",
+        "drivers/usb/gadget/function/usb_f_qdss.ko",
         "drivers/usb/mon/usbmon.ko",
         "drivers/usb/pd/qpnp-pdphy.ko",
         "drivers/usb/pd/usbpd.ko",
