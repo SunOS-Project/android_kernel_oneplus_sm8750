@@ -5578,18 +5578,6 @@ static void walt_init(struct work_struct *work)
 
 	stop_machine(walt_init_stop_handler, NULL, NULL);
 
-	/*
-	 * validate root-domain perf-domain is configured properly
-	 * to work with an asymmetrical soc. This is necessary
-	 * for load balance and task placement to work properly.
-	 * see walt_find_energy_efficient_cpu(), and
-	 * create_util_to_cost().
-	 */
-	if (!rcu_access_pointer(rd->pd) && num_sched_clusters > 1)
-		WALT_BUG(WALT_BUG_WALT, NULL,
-			 "root domain's perf-domain values not initialized rd->pd=%p.",
-			 rd->pd);
-
 	walt_register_sysctl();
 	walt_register_debugfs();
 
