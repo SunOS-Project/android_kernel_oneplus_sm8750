@@ -1,4 +1,5 @@
 load("//build:msm_kernel_extensions.bzl", "define_top_level_rules")
+load(":kera_le.bzl", "define_kera_le")
 load(":monaco.bzl", "define_monaco")
 load(":msm_common.bzl", "define_signing_keys")
 load(":parrot.bzl", "define_parrot")
@@ -28,6 +29,7 @@ def define_msm_platforms():
     define_sdxkova_cpe_wkk()
     define_sun()
     define_sun_le()
+    define_kera_le()
     define_sun_tuivm()
     define_sun_oemvm()
     define_sun_vms()

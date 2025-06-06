@@ -240,6 +240,7 @@ static inline bool should_pipeline_pin_special(void)
 cpumask_t last_available_big_cpus = CPU_MASK_NONE;
 int have_heavy_list;
 u32 total_util;
+u32 least_pipeline_demand;
 #define REARRANGE_HYST_MS	100ULL
 bool find_heaviest_topapp(u64 window_start)
 {
@@ -248,7 +249,7 @@ bool find_heaviest_topapp(u64 window_start)
 	unsigned long flags;
 	static u64 last_rearrange_ns;
 	u64 rearrange_target_ns = 0;
-	int i, j, start;
+	int i, j, start, delta = 0;
 	struct walt_task_struct *heavy_wts_to_drop[MAX_NR_PIPELINE];
 
 	if (num_sched_clusters < 2)
@@ -273,15 +274,19 @@ bool find_heaviest_topapp(u64 window_start)
 			pipeline_set_unisolation(false, AUTO_PIPELINE);
 		}
 		last_rearrange_ns = window_start;
+		least_pipeline_demand = 0;
 		return false;
 	}
 
-
-	if (likely(heavy_wts[0]))
+	if (likely(heavy_wts[0])) {
 		rearrange_target_ns = last_rearrange_ns +
-					((u64)sysctl_pipeline_rearrange_delay_ms[0] * MSEC_TO_NSEC);
-	else
-		rearrange_target_ns = last_rearrange_ns + (REARRANGE_HYST_MS * MSEC_TO_NSEC);
+				((u64)sysctl_pipeline_rearrange_delay_ms[0] * MSEC_TO_NSEC);
+	} else {
+		rearrange_target_ns = last_rearrange_ns + (250ULL * MSEC_TO_NSEC);
+		/* clear event_windows for topapp tasks whenever pipeline is enabled */
+		list_for_each_entry(wts, &grp->tasks, grp_list)
+			atomic_set(&wts->event_windows, 0);
+	}
 
 	if (last_rearrange_ns && (window_start < rearrange_target_ns))
 		return false;
@@ -311,23 +316,93 @@ bool find_heaviest_topapp(u64 window_start)
 	 */
 	list_for_each_entry(wts, &grp->tasks, grp_list) {
 		struct walt_task_struct *to_be_placed_wts = wts;
+		unsigned int win_cnt;
+		int penalty = 0;
 
-		/* if the task hasn't seen action recently skip it */
-		if (wts->mark_start < window_start - (sched_ravg_window * 2))
+		win_cnt = atomic_read(&to_be_placed_wts->event_windows);
+		atomic_set(&to_be_placed_wts->event_windows, 0);
+
+		to_be_placed_wts->pipeline_activity_cnt =
+					max((int)to_be_placed_wts->pipeline_activity_cnt - 1, 0);
+
+		/*
+		 * Penalty is applied on the tasks which have less demand(less than 50) and
+		 * were active for less than 4 windows.
+		 */
+		if ((pipeline_demand(to_be_placed_wts) < 50) && (win_cnt < 4)) {
+			to_be_placed_wts->pipeline_activity_cnt =
+					max((int)to_be_placed_wts->pipeline_activity_cnt - 10, 0);
+
+			if (to_be_placed_wts->pipeline_cpu == -1)
+				continue;
+		}
+
+		/*
+		 * Calculate penalty for tasks:
+		 * This is to ensure older pipeline task, which are currently not active gets
+		 * filtered out from pipeline selection.
+		 *
+		 * If task is big (bigger than smallest pipeline task) then it's active
+		 * window count is added to improve it's pipeline selection chances.
+		 *
+		 * If task is small in demand than the least heavy pipeline tasks then
+		 * appply penalty of 5.
+		 *
+		 * If task is marked as LST add 10 more to penalty.
+		 */
+		delta = pipeline_demand(to_be_placed_wts) - least_pipeline_demand;
+		if (delta >= 0)
+			to_be_placed_wts->pipeline_activity_cnt += win_cnt;
+		else
+			penalty = 5;
+
+		if (to_be_placed_wts->lst)
+			penalty += 10;
+
+		to_be_placed_wts->pipeline_activity_cnt =
+				max((int)to_be_placed_wts->pipeline_activity_cnt - penalty, 0);
+
+		/*
+		 * Ignore any LST task with either small pipeline count or task is not
+		 * a pipeline task.
+		 */
+		if (to_be_placed_wts->lst && ((to_be_placed_wts->pipeline_activity_cnt < 50) ||
+							(to_be_placed_wts->pipeline_cpu == -1)))
 			continue;
 
-		/* skip user defined task as it's already part of the list*/
-		if (pipeline_special_task && (wts == heavy_wts[0]))
+		/* saturate pipeline count to 250 so that we have deterministic decay */
+		if (to_be_placed_wts->pipeline_activity_cnt > 250)
+			to_be_placed_wts->pipeline_activity_cnt = 250;
+
+		/* skip user defined task as it's already part of the list */
+		if (pipeline_special_task && (to_be_placed_wts == heavy_wts[0]))
 			continue;
 
+		/* skip recently forked thread, at least until next 2 evaluations */
+		if ((to_be_placed_wts->mark_start_birth_ts > window_start) ||
+			((window_start - to_be_placed_wts->mark_start_birth_ts) <
+								(200ULL * MSEC_TO_NSEC)))
+			continue;
+
+		/* skip tasks which are not active since last 2 windows */
+		if (to_be_placed_wts->mark_start < window_start - (sched_ravg_window * 2))
+			continue;
+
+		/* evaluate task for pipeline based on the pipeline_activity_cnt */
 		for (i = start; i < MAX_NR_PIPELINE; i++) {
 			if (!heavy_wts[i]) {
 				heavy_wts[i] = to_be_placed_wts;
 				break;
-			} else if (pipeline_demand(to_be_placed_wts) >=
-					pipeline_demand(heavy_wts[i])) {
+			} else if (to_be_placed_wts->pipeline_activity_cnt >=
+					heavy_wts[i]->pipeline_activity_cnt) {
 				struct walt_task_struct *tmp;
 
+				if (to_be_placed_wts->pipeline_activity_cnt ==
+							heavy_wts[i]->pipeline_activity_cnt) {
+					if (pipeline_demand(to_be_placed_wts) <=
+								pipeline_demand(heavy_wts[i]))
+						continue;
+				}
 				tmp = heavy_wts[i];
 				heavy_wts[i] = to_be_placed_wts;
 				to_be_placed_wts = tmp;
@@ -353,7 +428,7 @@ bool find_heaviest_topapp(u64 window_start)
 			heavy_wts[MAX_NR_PIPELINE - 1] = NULL;
 	}
 
-	/* reset heavy for tasks that are no longer heavy */
+	/* reset tasks that are no longer eligible for pipeline */
 	for (i = 0; i < MAX_NR_PIPELINE; i++) {
 		bool reset = true;
 
@@ -387,13 +462,23 @@ bool find_heaviest_topapp(u64 window_start)
 	 * heavy tasks have WALT_LOW_LATENCY_HEAVY_BIT bit.  Ensure that all
 	 * the heavy tasks have WALT_LOW_LATENCY_HEAVY_BIT set.
 	 */
+	least_pipeline_demand = INT_MAX;
 	for (i = 0; i < MAX_NR_PIPELINE; i++) {
-		if (heavy_wts[i])
+		if (heavy_wts[i]) {
 			heavy_wts[i]->low_latency |= WALT_LOW_LATENCY_HEAVY_BIT;
+			heavy_wts[i]->pipeline_activity_cnt += 3;
+
+			/*
+			 * least_pipeline_demand: tracks smallest pipeline task, this is used
+			 * for calculation of penalty during pipeline task selection.
+			 */
+			if (pipeline_demand(heavy_wts[i]) <= least_pipeline_demand)
+				least_pipeline_demand = pipeline_demand(heavy_wts[i]);
+		}
 	}
 
 	if (heavy_wts[MAX_NR_PIPELINE - 1] ||
-		(heavy_wts[0] && is_max_possible_cluster_cpu(cpumask_last(&cpus_for_pipeline))))
+	    (heavy_wts[0] && is_max_possible_cluster_cpu(cpumask_last(&cpus_for_pipeline))))
 		pipeline_set_unisolation(true, AUTO_PIPELINE);
 	else
 		pipeline_set_unisolation(false, AUTO_PIPELINE);

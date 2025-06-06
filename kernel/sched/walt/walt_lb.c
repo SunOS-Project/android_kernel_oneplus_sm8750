@@ -242,13 +242,14 @@ static inline bool _walt_can_migrate_task(struct task_struct *p, int dst_cpu,
 	if (wrq->push_task == p)
 		return false;
 
+	if (pipeline_in_progress() && walt_pipeline_low_latency_task(p))
+		return false;
+
 	if (to_lower) {
 		if (wts->iowaited && (wts->demand_scaled < MIN_UTIL_FOR_STORAGE_BALANCING))
 			return false;
 		if (per_task_boost(p) == TASK_BOOST_STRICT_MAX &&
 				task_in_related_thread_group(p))
-			return false;
-		if (pipeline_in_progress() && walt_pipeline_low_latency_task(p))
 			return false;
 		if (!force && walt_get_rtg_status(p))
 			return false;
@@ -379,6 +380,9 @@ static int walt_lb_pull_tasks(int dst_cpu, int src_cpu, struct task_struct **pul
 	}
 
 	list_for_each_entry_reverse(p, &src_rq->cfs_tasks, se.group_node) {
+
+		if (pipeline_in_progress() && walt_pipeline_low_latency_task(p))
+			continue;
 
 		if (task_on_cpu(src_rq, p)) {
 			if (cpumask_test_cpu(dst_cpu, p->cpus_ptr)

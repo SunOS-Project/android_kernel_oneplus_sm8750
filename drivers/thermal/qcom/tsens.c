@@ -283,6 +283,11 @@ static inline int code_to_degc(u32 adc_code, const struct tsens_sensor *s)
 	return degc;
 }
 
+static inline enum tsens_ver tsens_version(struct tsens_priv *priv)
+{
+	return priv->feat->ver_major;
+}
+
 /**
  * tsens_hw_to_mC - Return sign-extended temperature in mCelsius.
  * @s:     Pointer to sensor struct
@@ -302,35 +307,39 @@ static int tsens_hw_to_mC(const struct tsens_sensor *s, int field)
 	unsigned int status = 0;
 	int ret = 0;
 
-	resolution = priv->fields[LAST_TEMP_0].msb -
-		priv->fields[LAST_TEMP_0].lsb;
-
+	resolution = priv->feat->last_temp_resolution;
 	ret = regmap_field_read(priv->rf[field], &status);
 	if (ret)
 		return ret;
 
-	temp1 = status & TM_LAST_TEMP_BIT_MASK;
-	if (status & TM_SN_STATUS_VALID_BIT) {
-		temp = temp1;
+	/* VER_0 doesn't have VALID bit */
+	if (tsens_version(priv) == VER_0) {
+		temp = status;
 		goto convert;
-	}
-	ret = regmap_field_read(priv->rf[field], &status);
-	if (ret)
-		return ret;
+	} else {
+		temp1 = status & priv->feat->last_temp_mask;
+		if (status & priv->feat->valid_bit) {
+			temp = temp1;
+			goto convert;
+		}
+		ret = regmap_field_read(priv->rf[field], &status);
+		if (ret)
+			return ret;
 
-	temp2 = status & TM_LAST_TEMP_BIT_MASK;
-	if (status & TM_SN_STATUS_VALID_BIT) {
-		temp = temp2;
-		goto convert;
-	}
-	ret = regmap_field_read(priv->rf[field], &status);
-	if (ret)
-		return ret;
+		temp2 = status & priv->feat->last_temp_mask;
+		if (status & priv->feat->valid_bit) {
+			temp = temp2;
+			goto convert;
+		}
+		ret = regmap_field_read(priv->rf[field], &status);
+		if (ret)
+			return ret;
 
-	temp3 = status & TM_LAST_TEMP_BIT_MASK;
-	if (status & TM_SN_STATUS_VALID_BIT) {
-		temp = temp3;
-		goto convert;
+		temp3 = status & priv->feat->last_temp_mask;
+		if (status & priv->feat->valid_bit) {
+			temp = temp3;
+			goto convert;
+		}
 	}
 
 	if (temp1 == temp2)
@@ -367,11 +376,6 @@ static int tsens_mC_to_hw(const struct tsens_sensor *s, int temp)
 
 	/* milliC to deciC */
 	return temp / 100;
-}
-
-static inline enum tsens_ver tsens_version(struct tsens_priv *priv)
-{
-	return priv->feat->ver_major;
 }
 
 static void tsens_set_interrupt_v1(struct tsens_priv *priv, u32 hw_id,

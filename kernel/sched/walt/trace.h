@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #undef TRACE_SYSTEM
@@ -1811,7 +1811,10 @@ TRACE_EVENT(sched_pipeline_tasks,
 		__field(int, special_pid)
 		__field(unsigned int, util_thres)
 		__field(u32, total_util)
+		__field(unsigned int, pipeline_activity_cnt)
+		__field(int, event_windows)
 		__field(bool, pipeline_pinning)
+		__field(bool, lst)
 	),
 
 	TP_fast_assign(
@@ -1828,14 +1831,18 @@ TRACE_EVENT(sched_pipeline_tasks,
 		__entry->util_thres	= sysctl_sched_pipeline_util_thres;
 		__entry->total_util	= total_util;
 		__entry->pipeline_pinning = pipeline_pinning;
+		__entry->pipeline_activity_cnt = heavy_wts->pipeline_activity_cnt;
+		__entry->lst		= heavy_wts->lst;
+		__entry->event_windows	= atomic_read(&heavy_wts->event_windows);
 	),
 
-	TP_printk("type=%d index=%d pid=%d comm=%s demand=%d coloc_demand=%d pipeline_cpu=%d low_latency=0x%x nr_pipeline=%d special_pid=%d util_thres=%u total_util=%u pipeline_pin=%d",
+	TP_printk("type=%d index=%d pid=%d comm=%s demand=%d coloc_demand=%d pipeline_cpu=%d low_latency=0x%x nr_pipeline=%d special_pid=%d util_thres=%u total_util=%u pipeline_pin=%d event_windows=%d pipeline_activity_cnt=%u lst=%d",
 			__entry->type, __entry->index, __entry->pid,
 			__entry->comm, __entry->demand_scaled, __entry->coloc_demand,
 			__entry->pipeline_cpu, __entry->low_latency, __entry->nr,
 			__entry->special_pid, __entry->util_thres, __entry->total_util,
-			__entry->pipeline_pinning)
+			__entry->pipeline_pinning, __entry->event_windows,
+			__entry->pipeline_activity_cnt, __entry->lst)
 );
 
 TRACE_EVENT(sched_pipeline_swapped,
@@ -1919,14 +1926,13 @@ TRACE_EVENT(sched_boost_bus_dcvs,
 		__entry->storage_boosted)
 );
 
-TRACE_EVENT(sched_yielder,
+TRACE_EVENT(walt_account_yields,
 	TP_PROTO(u64 wc, u64 start_ts, u8 window_cnt,
 		 unsigned int total_yield_cnt, unsigned int target_threshold_wake,
-		 unsigned int total_sleep_cnt, unsigned int target_threshold_sleep,
-		 unsigned int in_legacy_uncap),
+		 unsigned int total_sleep_cnt, unsigned int target_threshold_sleep),
 
 	TP_ARGS(wc, start_ts, window_cnt, total_yield_cnt, target_threshold_wake,
-		total_sleep_cnt, target_threshold_sleep, in_legacy_uncap),
+		total_sleep_cnt, target_threshold_sleep),
 
 	TP_STRUCT__entry(
 		__field(u64,		wc)
@@ -1936,7 +1942,6 @@ TRACE_EVENT(sched_yielder,
 		 __field(unsigned int,	target_threshold_wake)
 		 __field(unsigned int,	total_sleep_cnt)
 		 __field(unsigned int,	target_threshold_sleep)
-		 __field(unsigned int,	in_legacy_uncap)
 	),
 
 	TP_fast_assign(
@@ -1947,13 +1952,12 @@ TRACE_EVENT(sched_yielder,
 		__entry->target_threshold_wake	= target_threshold_wake;
 		__entry->total_sleep_cnt	= total_sleep_cnt;
 		__entry->target_threshold_sleep	= target_threshold_sleep;
-		__entry->in_legacy_uncap	= in_legacy_uncap;
 	),
 
-	TP_printk("wallclock=%llu start_ts=%llu continous_windows=%u global_yield_cnt=%u target_yield_th=%u global_sleep_cnt=%u target_induced_sleep_th=%u in_legacy_frequency_uncap=0x%x",
+	TP_printk("wallclock=%llu start_ts=%llu continous_windows=%u global_yield_cnt=%u target_yield_th=%u global_sleep_cnt=%u target_induced_sleep_th=%u",
 		  __entry->wc, __entry->start_ts, __entry->window_cnt, __entry->total_yield_cnt,
 		  __entry->target_threshold_wake, __entry->total_sleep_cnt,
-		  __entry->target_threshold_sleep, __entry->in_legacy_uncap)
+		  __entry->target_threshold_sleep)
 );
 
 TRACE_EVENT(sched_update_busy_bitmap,
