@@ -268,8 +268,8 @@ bool find_heaviest_topapp(u64 window_start)
 					heavy_wts[i] = NULL;
 				}
 			}
-			raw_spin_unlock_irqrestore(&heavy_lock, flags);
 			have_heavy_list = 0;
+			raw_spin_unlock_irqrestore(&heavy_lock, flags);
 
 			pipeline_set_unisolation(false, AUTO_PIPELINE);
 		}
@@ -278,15 +278,11 @@ bool find_heaviest_topapp(u64 window_start)
 		return false;
 	}
 
-	if (likely(heavy_wts[0])) {
+	if (likely(heavy_wts[0]))
 		rearrange_target_ns = last_rearrange_ns +
 				((u64)sysctl_pipeline_rearrange_delay_ms[0] * MSEC_TO_NSEC);
-	} else {
+	else
 		rearrange_target_ns = last_rearrange_ns + (250ULL * MSEC_TO_NSEC);
-		/* clear event_windows for topapp tasks whenever pipeline is enabled */
-		list_for_each_entry(wts, &grp->tasks, grp_list)
-			atomic_set(&wts->event_windows, 0);
-	}
 
 	if (last_rearrange_ns && (window_start < rearrange_target_ns))
 		return false;
@@ -316,10 +312,12 @@ bool find_heaviest_topapp(u64 window_start)
 	 */
 	list_for_each_entry(wts, &grp->tasks, grp_list) {
 		struct walt_task_struct *to_be_placed_wts = wts;
-		unsigned int win_cnt;
+		unsigned int win_cnt = 0;
 		int penalty = 0;
 
-		win_cnt = atomic_read(&to_be_placed_wts->event_windows);
+		if (have_heavy_list)
+			win_cnt = atomic_read(&to_be_placed_wts->event_windows);
+
 		atomic_set(&to_be_placed_wts->event_windows, 0);
 
 		to_be_placed_wts->pipeline_activity_cnt =
