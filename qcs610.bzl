@@ -132,6 +132,7 @@ def define_qcs610():
         "drivers/soc/qcom/boot_stats.ko",
         "drivers/soc/qcom/cdsprm.ko",
         "drivers/soc/qcom/cmd-db.ko",
+        "drivers/soc/qcom/cx_ipeak.ko",
         "drivers/soc/qcom/dcvs/bwmon.ko",
         "drivers/soc/qcom/dcvs/dcvs_fp.ko",
         "drivers/soc/qcom/dcvs/memlat.ko",
@@ -153,6 +154,7 @@ def define_qcs610():
         "drivers/soc/qcom/qcom_wdt_core.ko",
         "drivers/soc/qcom/qfprom-sys.ko",
         "drivers/soc/qcom/qmi_helpers.ko",
+        "drivers/soc/qcom/qsee_ipc_irq_bridge.ko",
         "drivers/soc/qcom/qti_pmic_glink.ko",
         "drivers/soc/qcom/secure_buffer.ko",
         "drivers/soc/qcom/slatecom_spi.ko",
@@ -236,6 +238,7 @@ def define_qcs610():
         "net/tipc/diag.ko",
         "net/tipc/tipc.ko",
         "net/vmw_vsock/vmw_vsock_virtio_transport.ko",
+        "net/wireless/cfg80211.ko",
         "sound/soc/soc-topology-test.ko",
         "sound/soc/soc-utils-test.ko",
     ]
