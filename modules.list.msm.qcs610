@@ -16,6 +16,7 @@ qcom-dload-mode.ko
 debug_symbol.ko
 minidump.ko
 qcom_soc_wdt.ko
+dcc_v2.ko
 memory_dump_v2.ko
 qcom-scm.ko
 pinctrl-msm.ko
