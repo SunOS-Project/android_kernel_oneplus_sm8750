@@ -44,6 +44,7 @@ ufshcd-crypto-qti.ko
 sdhci-msm.ko
 cqhci.ko
 qcom-pdc.ko
+debug-regulator.ko
 qcom_rpmh.ko
 cmd-db.ko
 qcom_ice.ko
