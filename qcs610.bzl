@@ -113,6 +113,7 @@ def define_qcs610():
         "drivers/ptp/ptp.ko",
         "drivers/ptp/ptp_kvm.ko",
         "drivers/pwm/pwm-qti-lpg.ko",
+        "drivers/regulator/debug-regulator.ko",
         "drivers/regulator/proxy-consumer.ko",
         "drivers/regulator/qpnp-lcdb-regulator.ko",
         "drivers/regulator/rpmh-regulator.ko",
