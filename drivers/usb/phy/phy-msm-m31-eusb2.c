@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/err.h>
@@ -111,13 +111,15 @@
 
 #define USB_PHY_FSEL_SEL		(0xb8)
 
-/* M31 PHY XCFGI interface registers */
-#define USB_PHY_XCFGI_39_32		(0x16c)
+/* M31 PHY XCFGI interface registers & bit(s)*/
+#define USB_PHY_XCFGI_159_152		(0x1A8)
 #define USB_PHY_XCFGI_71_64		(0x17c)
+#define USB_PHY_XCFGI_39_32		(0x16c)
 #define USB_PHY_XCFGI_31_24		(0x168)
 #define XCFG_U2_HSTX_SLEW		(0x7)
 #define USB_PHY_XCFGI_7_0		(0x15c)
 #define XCFG_U2_PLLLOCKTIME		(0x3)
+#define XCFG_SE0_TIMEOUT_EN		BIT(7)
 
 /* EUD CSR field */
 #define EUD_EN2				BIT(0)
@@ -151,6 +153,13 @@ static const struct eusb_phy_tbl m31_eusb_phy_tbl[] = {
 };
 
 static const struct eusb_phy_tbl m31_eusb_phy_override_tbl[] = {
+	/*
+	 * Set XCFGI[159] to enable SE0 timeout mechanism in M31.
+	 * This enables a counter which will assume bus inactive if
+	 * SE0 is more then 2.5 us and reset the state machine to default
+	 * state.
+	 */
+	EUSB_PHY_INIT_CFG(USB_PHY_XCFGI_159_152, BIT(7), 1),
 	EUSB_PHY_INIT_CFG(USB_PHY_XCFGI_39_32, GENMASK(3, 2), 0),
 	EUSB_PHY_INIT_CFG(USB_PHY_XCFGI_71_64, GENMASK(3, 0), 7),
 	EUSB_PHY_INIT_CFG(USB_PHY_XCFGI_31_24, GENMASK(2, 0), 0),
