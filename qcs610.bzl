@@ -174,6 +174,8 @@ def define_qcs610():
         "drivers/thermal/qcom/msm-tsens-driver.ko",
         "drivers/thermal/qcom/qcom-spmi-adc-tm5.ko",
         "drivers/thermal/qcom/qcom-spmi-temp-alarm.ko",
+        "drivers/thermal/qcom/qti_cpufreq_cdev.ko",
+        "drivers/thermal/qcom/qti_devfreq_cdev.ko",
         "drivers/thermal/qcom/qti_qmi_cdev.ko",
         "drivers/thermal/qcom/thermal_pause.ko",
         "drivers/tty/serial/msm_geni_serial.ko",
