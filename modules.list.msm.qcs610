@@ -51,6 +51,7 @@ debug-regulator.ko
 qcom_rpmh.ko
 cmd-db.ko
 qcom_ice.ko
+mdt_loader.ko
 gdsc-regulator.ko
 proxy-consumer.ko
 rpmh-regulator.ko
