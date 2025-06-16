@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2009-2017, 2021 The Linux Foundation. All rights reserved.
  * Copyright (c) 2017-2019, Linaro Ltd.
- * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/debugfs.h>
@@ -645,6 +645,8 @@ static const struct soc_id soc_id[] = {
 	{ qcom_board_id(KERA) },
 	{ qcom_board_id(KERAP) },
 	{ qcom_board_id(QCS610) },
+	{ qcom_board_id(CQ8750S) },
+	{ qcom_board_id(CQ8725S) },
 };
 
 static struct attribute *msm_custom_socinfo_attrs[MAX_SOCINFO_ATTRS];
