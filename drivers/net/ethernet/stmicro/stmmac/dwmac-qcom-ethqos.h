@@ -76,6 +76,9 @@ struct qcom_ethqos {
 	struct regulator *reg_rgmii;
 	struct regulator *reg_emac_phy;
 	struct regulator *reg_rgmii_io_pads;
+
+	bool phyad_change;
+	bool is_gpio_phy_reset;
 };
 
 int ethqos_init_regulators(struct qcom_ethqos *ethqos);

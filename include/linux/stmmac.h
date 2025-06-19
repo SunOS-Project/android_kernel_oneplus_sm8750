@@ -312,6 +312,8 @@ struct plat_stmmacenet_data {
 	int rss_en;
 	int mac_port_sel_speed;
 	int has_xgmac;
+	bool phyad_change;
+	bool is_gpio_phy_reset;
 	u8 vlan_fail_q;
 	unsigned int eee_usecs_rate;
 	struct pci_dev *pdev;
