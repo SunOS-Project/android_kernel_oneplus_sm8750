@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/kernel.h>
@@ -116,7 +116,7 @@ static int secure_etr_assign_to_mpss(struct secure_etr_drvdata *drvdata)
 	struct coresight_device *qmi = secure_etr_get_qmi_device(drvdata);
 	struct coresight_etr_assign_req_msg_v01 *etr_data;
 
-	etr_data = kzalloc(sizeof(*etr_data), GFP_KERNEL);
+	etr_data = devm_kzalloc(drvdata->dev, sizeof(*etr_data), GFP_KERNEL);
 	if (!etr_data)
 		return -ENOMEM;
 
@@ -135,7 +135,7 @@ static int secure_etr_assign_to_apss(struct secure_etr_drvdata *drvdata)
 	struct coresight_device *qmi = secure_etr_get_qmi_device(drvdata);
 	struct coresight_etr_assign_req_msg_v01 *etr_data;
 
-	etr_data = kzalloc(sizeof(*etr_data), GFP_KERNEL);
+	etr_data = devm_kzalloc(drvdata->dev, sizeof(*etr_data), GFP_KERNEL);
 	if (!etr_data)
 		return -ENOMEM;
 
