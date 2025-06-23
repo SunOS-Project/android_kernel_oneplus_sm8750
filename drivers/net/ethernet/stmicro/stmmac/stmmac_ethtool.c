@@ -7,6 +7,7 @@
 
   Author: Giuseppe Cavallaro <peppe.cavallaro@st.com>
 *******************************************************************************/
+/* Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries. */
 
 #include <linux/etherdevice.h>
 #include <linux/ethtool.h>
@@ -311,10 +312,10 @@ static int stmmac_ethtool_get_link_ksettings(struct net_device *dev,
 {
 	struct stmmac_priv *priv = netdev_priv(dev);
 
-	if ((!(priv->plat->flags & STMMAC_FLAG_HAS_INTEGRATED_PCS) ||
-	     !priv->plat->has_gmac4) &&
-		(priv->hw->pcs & STMMAC_PCS_RGMII ||
-		 priv->hw->pcs & STMMAC_PCS_SGMII)) {
+	if (!(priv->plat->flags & STMMAC_FLAG_HAS_INTEGRATED_PCS) &&
+	    !priv->plat->has_gmac4 &&
+	    (priv->hw->pcs & STMMAC_PCS_RGMII ||
+	     priv->hw->pcs & STMMAC_PCS_SGMII)) {
 		struct rgmii_adv adv;
 		u32 supported, advertising, lp_advertising;
 
@@ -399,10 +400,10 @@ stmmac_ethtool_set_link_ksettings(struct net_device *dev,
 {
 	struct stmmac_priv *priv = netdev_priv(dev);
 
-	if ((!(priv->plat->flags & STMMAC_FLAG_HAS_INTEGRATED_PCS) ||
-	     !priv->plat->has_gmac4) &&
-		(priv->hw->pcs & STMMAC_PCS_RGMII ||
-		 priv->hw->pcs & STMMAC_PCS_SGMII)) {
+	if (!(priv->plat->flags & STMMAC_FLAG_HAS_INTEGRATED_PCS) &&
+	    !priv->plat->has_gmac4 &&
+	    (priv->hw->pcs & STMMAC_PCS_RGMII ||
+	     priv->hw->pcs & STMMAC_PCS_SGMII)) {
 		/* Only support ANE */
 		if (cmd->base.autoneg != AUTONEG_ENABLE)
 			return -EINVAL;
