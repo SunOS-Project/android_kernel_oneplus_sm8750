@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  */
 
@@ -161,28 +161,10 @@ static int __gh_msgq_recv(struct gh_msgq_cap_table *cap_table_entry,
 	return ret;
 }
 
-/**
- * gh_msgq_recv: Receive a message from the client running on a different VM
- * @client_desc: The client descriptor that was obtained via gh_msgq_register()
- * @buff: Pointer to the buffer where the received data must be placed
- * @buff_size: The size of the buffer space available
- * @recv_size: The actual amount of data that is copied into buff
- * @flags: Optional flags to pass to receive the data. For the list of flags,
- *         see linux/gunyah/gh_msgq.h
- *
- * The function returns 0 if the data is successfully received and recv_size
- * would contain the actual amount of data copied into buff.
- * It returns -EINVAL if the caller passes invalid arguments, -EAGAIN
- * if the message queue is not yet ready to communicate, and -EPERM if the
- * caller doesn't have permissions to receive the data. In all these failure
- * cases, recv_size is unmodified.
- *
- * Note: this function may sleep and should not be called from interrupt
- *       context
- */
-int gh_msgq_recv(void *msgq_client_desc,
+static int gh_msgq_recv_state(void *msgq_client_desc,
 			void *buff, size_t buff_size,
-			size_t *recv_size, unsigned long flags)
+			size_t *recv_size, unsigned long flags,
+			int state)
 {
 	struct gh_msgq_desc *client_desc = msgq_client_desc;
 	struct gh_msgq_cap_table *cap_table_entry;
@@ -218,9 +200,10 @@ int gh_msgq_recv(void *msgq_client_desc,
 
 	spin_unlock(&cap_table_entry->cap_entry_lock);
 
-	if (wait_event_interruptible(cap_table_entry->rx_wq,
-				cap_table_entry->rx_cap_id != GH_CAPID_INVAL))
-		return -ERESTARTSYS;
+	ret = wait_event_state(cap_table_entry->rx_wq,
+				cap_table_entry->rx_cap_id != GH_CAPID_INVAL, state);
+	if (ret)
+		return ret;
 
 	spin_lock(&cap_table_entry->cap_entry_lock);
 
@@ -237,9 +220,10 @@ int gh_msgq_recv(void *msgq_client_desc,
 		if (cap_table_entry->rx_empty && (flags & GH_MSGQ_NONBLOCK))
 			return -EAGAIN;
 
-		if (wait_event_interruptible(cap_table_entry->rx_wq,
-					!cap_table_entry->rx_empty))
-			return -ERESTARTSYS;
+		ret = wait_event_state(cap_table_entry->rx_wq,
+					!cap_table_entry->rx_empty, state);
+		if (ret)
+			return ret;
 
 		ret = __gh_msgq_recv(cap_table_entry, buff, buff_size,
 					recv_size, flags);
@@ -255,7 +239,50 @@ err:
 	spin_unlock(&cap_table_entry->cap_entry_lock);
 	return ret;
 }
+
+/**
+ * gh_msgq_recv: Receive a message from the client running on a different VM
+ * @client_desc: The client descriptor that was obtained via gh_msgq_register()
+ * @buff: Pointer to the buffer where the received data must be placed
+ * @buff_size: The size of the buffer space available
+ * @recv_size: The actual amount of data that is copied into buff
+ * @flags: Optional flags to pass to receive the data. For the list of flags,
+ *         see linux/gunyah/gh_msgq.h
+ *
+ * The function returns 0 if the data is successfully received and recv_size
+ * would contain the actual amount of data copied into buff.
+ * It returns -EINVAL if the caller passes invalid arguments, -EAGAIN
+ * if the message queue is not yet ready to communicate, and -EPERM if the
+ * caller doesn't have permissions to receive the data. In all these failure
+ * cases, recv_size is unmodified.
+ *
+ * Note: this function may sleep and should not be called from interrupt
+ *       context
+ */
+int gh_msgq_recv(void *msgq_client_desc,
+			void *buff, size_t buff_size,
+			size_t *recv_size, unsigned long flags)
+{
+	return gh_msgq_recv_state(msgq_client_desc, buff, buff_size,
+				  recv_size, flags, TASK_INTERRUPTIBLE);
+}
 EXPORT_SYMBOL_GPL(gh_msgq_recv);
+
+/*
+ * Similar to gh_msgq_recv, but will not be interrupted unless killed,
+ * see wait_event_killable.
+ *
+ * This is useful for processes which can't handle signals generated
+ * by freezeing-of-tasks during suspend.
+ */
+int gh_msgq_recv_killable(void *msgq_client_desc,
+			void *buff, size_t buff_size,
+			size_t *recv_size, unsigned long flags)
+{
+	return gh_msgq_recv_state(msgq_client_desc, buff, buff_size,
+				  recv_size, flags, TASK_KILLABLE);
+}
+EXPORT_SYMBOL_GPL(gh_msgq_recv_killable);
 
 static int __gh_msgq_send(struct gh_msgq_cap_table *cap_table_entry,
 				void *buff, size_t size, u64 tx_flags)
