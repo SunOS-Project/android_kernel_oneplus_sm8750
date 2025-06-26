@@ -14,7 +14,7 @@
  * This driver is based on idea from Hafnium Hypervisor Linux Driver,
  * but modified to work with Gunyah Hypervisor as needed.
  *
- * Copyright (c) 2021-2025, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #define pr_fmt(fmt)	"gh_proxy_sched: " fmt
@@ -389,9 +389,11 @@ static int gh_unpopulate_vm_vcpu_info(gh_vmid_t vmid, gh_label_t cpu_idx,
 			*irq = vcpu->virq;
 			free_irq(vcpu->virq, vcpu);
 			vcpu->virq = U32_MAX;
-			cancel_work_sync(&vcpu->work);
+			if (vcpu->workqueue_mode) {
+				cancel_work_sync(&vcpu->work);
+				vcpu->workqueue_mode = false;
+			}
 			wakeup_source_unregister(vcpu->ws);
-			vcpu->workqueue_mode = false;
 			unregister_pm_notifier(&vcpu->suspend_nb);
 
 			if (nr_vcpus)
@@ -744,7 +746,6 @@ int gh_vcpu_create_wq(gh_vmid_t vmid, unsigned int vcpu_id)
 	register_pm_notifier(&vcpu->suspend_nb);
 
 	/* schedule once incase we miss any interrupt */
-	schedule_work(&vcpu->work);
 	queue_work(vm->vcpu_wq, &vcpu->work);
 
 	return 0;
