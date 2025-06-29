@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef __SMBLITE_LIB_H
@@ -54,6 +54,7 @@ enum print_reason {
 #define TYPEC_SWAP_VOTER		"TYPEC_SWAP_VOTER"
 #define FLASH_ACTIVE_VOTER		"FLASH_ACTIVE_VOTER"
 #define CONCURRENT_MODE_VOTER		"CONCURRENT_MODE_VOTER"
+#define CHG_BST_PULLDOWN_VOTER		"CHG_BST_PULLDOWN_VOTER"
 
 #define BOOST_BACK_STORM_COUNT	3
 #define WEAK_CHG_STORM_COUNT	8
@@ -104,6 +105,7 @@ enum {
 	WEAK_ADAPTER_WA			= BIT(1),
 	FLASH_DIE_TEMP_DERATE_WA	= BIT(2),
 	HDC_ICL_REDUCTION_WA		= BIT(3),
+	CHG_BST_PULLDOWN_WA		= BIT(31),
 };
 
 enum jeita_cfg_stat {
@@ -338,6 +340,7 @@ struct smb_charger {
 	struct delayed_work	thermal_regulation_work;
 	struct delayed_work	role_reversal_check;
 	struct delayed_work	pr_swap_detach_work;
+	struct delayed_work	chg_bst_pulldown_work;
 
 	struct charger_param	chg_param;
 
@@ -391,6 +394,7 @@ struct smb_charger {
 
 	/* workaround flag */
 	u32			wa_flags;
+	u32			chg_bst_pulldown_wa_duration_ms;
 	int			boost_current_ua;
 
 	/* extcon for VBUS / ID notification to USB for uUSB */

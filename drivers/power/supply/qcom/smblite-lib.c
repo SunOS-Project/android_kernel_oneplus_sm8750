@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/device.h>
@@ -3138,6 +3138,53 @@ static int smblite_lib_request_dpdm(struct smb_charger *chg, bool enable)
 	return rc;
 }
 
+/*
+ * Control the internal 10mA pulldown on the CHG_BST rail.
+ * Enable: Write 11 to bits 1:0 of 0x2A70.
+ * Disable: Write 00 to bits 1:0 of 0x2A70.
+ * We have no documentation for this register, but it appears to be very similar
+ * to SCHG_W_USB_USB_IMP_CFG | 0x00002970, but for CHG_BST instead of USB_IN.
+ */
+#define CHG_BST_CONFIG_REG 0x2A70
+#define CHG_BST_PULLDOWN_BITS 0x03
+static int enable_chg_bst_pulldown(struct smb_charger *chg, bool enable)
+{
+	int ret;
+
+	ret = smblite_lib_masked_write(chg, CHG_BST_CONFIG_REG,
+		CHG_BST_PULLDOWN_BITS, enable ? CHG_BST_PULLDOWN_BITS : 0);
+	if (ret != 0) {
+		smblite_lib_err(chg, "Couldn't %s CHG_BST pulldown (ret=%d)\n",
+			enable ? "enable" : "disable", ret);
+	}
+	return ret;
+}
+
+/*
+ * Enable the CHG_BST pulldown immediately, and schedule it to be disabled after
+ * a brief delay. If called again before that delay expires, it will reschedule
+ * the disablement so that the pulldown remains enabled until after the last of
+ * the successive calls.
+ */
+static void pulse_chg_bst_pulldown(struct smb_charger *chg)
+{
+	cancel_delayed_work_sync(&chg->chg_bst_pulldown_work);
+	vote(chg->awake_votable, CHG_BST_PULLDOWN_VOTER, true, 0);
+	(void)enable_chg_bst_pulldown(chg, true);
+	schedule_delayed_work(&chg->chg_bst_pulldown_work,
+		msecs_to_jiffies(chg->chg_bst_pulldown_wa_duration_ms));
+}
+
+static void chg_bst_pulldown_work(struct work_struct *work)
+{
+	struct smb_charger *chg = container_of(work, struct smb_charger,
+		chg_bst_pulldown_work.work);
+
+	smblite_lib_dbg(chg, PR_MISC, "Disabling CHG_BST pulldown\n");
+	(void)enable_chg_bst_pulldown(chg, false);
+	vote(chg->awake_votable, CHG_BST_PULLDOWN_VOTER, false, 0);
+}
+
 #define PL_DELAY_MS	30000
 static void smblite_lib_usb_plugin_locked(struct smb_charger *chg)
 {
@@ -3169,6 +3216,19 @@ static void smblite_lib_usb_plugin_locked(struct smb_charger *chg)
 		vote(chg->awake_votable, PL_DELAY_VOTER, true, 0);
 		schedule_delayed_work(&chg->pl_enable_work,
 					msecs_to_jiffies(PL_DELAY_MS));
+		/*
+		 * There is a possibility for a brief USB plugin to leave a
+		 * stray voltage on the CHG_BST rail, which will interfere with
+		 * things and cause a ramdump when that regulator is turned on
+		 * to play audio. As a workaround, we briefly enable a 10mA
+		 * pulldown on that rail to discharge any transient voltage.
+		 * This is not required (and should be avoided) when the boost
+		 * reg is already powered.
+		 */
+		if ((chg->wa_flags & CHG_BST_PULLDOWN_WA)
+			&& !is_boost_en(chg)) {
+			pulse_chg_bst_pulldown(chg);
+		}
 	} else {
 		smblite_lib_update_usb_type(chg, POWER_SUPPLY_TYPE_UNKNOWN);
 		if (chg->wa_flags & BOOST_BACK_WA) {
@@ -4537,6 +4597,7 @@ int smblite_lib_init(struct smb_charger *chg)
 					smblite_lib_typec_role_check_work);
 	INIT_DELAYED_WORK(&chg->pr_swap_detach_work,
 					smblite_lib_pr_swap_detach_work);
+	INIT_DELAYED_WORK(&chg->chg_bst_pulldown_work, chg_bst_pulldown_work);
 	chg->fake_capacity = -EINVAL;
 	chg->fake_batt_status = -EINVAL;
 	chg->sink_src_mode = UNATTACHED_MODE;
