@@ -61,5 +61,6 @@ gpucc-sm6150.ko
 icc-rpmh.ko
 icc-bcm-voter.ko
 icc-debug.ko
+spi-msm-geni.ko
 qnoc-qos.ko
 qnoc-sm6150.ko
