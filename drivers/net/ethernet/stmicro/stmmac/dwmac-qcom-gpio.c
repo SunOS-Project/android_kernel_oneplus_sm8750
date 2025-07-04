@@ -13,7 +13,6 @@
 #include "dwmac-qcom-ethqos.h"
 #include "stmmac.h"
 
-#define EMAC_GDSC_EMAC_NAME "emac_gdsc"
 #define EMAC_VREG_RGMII_NAME "vreg_rgmii"
 #define EMAC_VREG_EMAC_PHY_NAME "vreg_emac_phy"
 #define EMAC_VREG_RGMII_IO_PADS_NAME "vreg_rgmii_io_pads"
