@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries..
  */
 
 #include <linux/module.h>
@@ -961,6 +961,8 @@ static void uaudio_connect(struct snd_usb_audio *chip)
 {
 	struct xhci_sideband *sb;
 
+	uaudio_dbg("chip: %p card_number:%d\n"
+			, chip, chip->card->number);
 	if (chip->card->number >= SNDRV_CARDS) {
 		uaudio_err("Invalid card number\n");
 		return;
@@ -988,6 +990,9 @@ static void uaudio_disconnect(struct snd_usb_audio *chip)
 	}
 
 	card_num = chip->card->number;
+	uaudio_dbg("chip: %p card: %d\n"
+			, chip, card_num);
+
 	if (card_num >= SNDRV_CARDS) {
 		uaudio_err("invalid card number\n");
 		return;

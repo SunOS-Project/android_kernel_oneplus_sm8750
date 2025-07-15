@@ -4028,6 +4028,7 @@ include/media/cec-pin.h
 include/media/cec.h
 include/media/frame_vector.h
 include/media/i2c/ir-kbd-i2c.h
+include/media/jpeg.h
 include/media/media-dev-allocator.h
 include/media/media-device.h
 include/media/media-devnode.h
@@ -4408,6 +4409,7 @@ include/trace/events/gpio.h
 include/trace/events/gpu_mem.h
 include/trace/events/huge_memory.h
 include/trace/events/i2c.h
+include/trace/events/icmp.h
 include/trace/events/initcall.h
 include/trace/events/io_uring.h
 include/trace/events/iocost.h
@@ -4531,6 +4533,7 @@ include/trace/hooks/selinux.h
 include/trace/hooks/signal.h
 include/trace/hooks/softlockup.h
 include/trace/hooks/suspend.h
+include/trace/hooks/swapfile.h
 include/trace/hooks/sys.h
 include/trace/hooks/syscall_check.h
 include/trace/hooks/sysrqcrash.h

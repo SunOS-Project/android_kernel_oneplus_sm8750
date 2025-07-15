@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/seq_file.h>
@@ -914,20 +914,30 @@ int walt_find_energy_efficient_cpu(struct task_struct *p, int prev_cpu,
 		cpumask_test_cpu(pipeline_cpu, p->cpus_ptr) &&
 		cpu_active(pipeline_cpu) &&
 		!cpu_halted(pipeline_cpu)) {
-		/*
-		 * A situation of target pipeline cpu already running a pipeline
-		 * task can only happen because of pipeline cpu swapping(i.e 'p'
-		 * is already a pipeline task running on pipeline cpu.
-		 * 'find_heaviest_topapp' where a task is evaluated as pipeline
-		 * (i.e 'p' might not be running on pipeline cpu) always ensures no
-		 * two task gets same pipeline cpu and thus we never enter hit this
-		 * condition.
-		 *
-		 * Thus if we are here that means prev_cpu of 'p' is definitely a
-		 * pipeline cpu.
-		 */
-		if (walt_pipeline_low_latency_task(cpu_rq(pipeline_cpu)->curr))
-			pipeline_cpu = prev_cpu;
+		if (walt_pipeline_low_latency_task(cpu_rq(pipeline_cpu)->curr)) {
+			/*
+			 * In case if target pipeline cpu is already running a pipeline task
+			 * then scan through all the pipeline cpus and place task on the cpu
+			 * not running any pipeline task(preference is give to prev_cpu if it
+			 * is a pipeline cpu).
+			 */
+			if (cpumask_test_cpu(prev_cpu, &cpus_for_pipeline) &&
+				!walt_pipeline_low_latency_task(cpu_rq(prev_cpu)->curr)) {
+				pipeline_cpu = prev_cpu;
+			} else {
+				int itr_cpu;
+
+				for_each_cpu(itr_cpu, &cpus_for_pipeline) {
+					if (itr_cpu == pipeline_cpu) {
+						continue;
+					} else if (!walt_pipeline_low_latency_task(
+									cpu_rq(itr_cpu)->curr)) {
+						pipeline_cpu = itr_cpu;
+						break;
+					}
+				}
+			}
+		}
 
 		best_energy_cpu = pipeline_cpu;
 		fbt_env.fastpath = PIPELINE_FASTPATH;

@@ -31,14 +31,14 @@
 /* GMAC4 defines */
 #define MII_GMAC4_GOC_SHIFT		2
 #define MII_GMAC4_REG_ADDR_SHIFT	16
-#define MII_GMAC4_WRITE			(1 << MII_GMAC4_GOC_SHIFT)
+#define MII_GMAC4_WRITE			BIT(MII_GMAC4_GOC_SHIFT)
 #define MII_GMAC4_READ			(3 << MII_GMAC4_GOC_SHIFT)
 #define MII_GMAC4_C45E			BIT(1)
 
 /* XGMAC defines */
 #define MII_XGMAC_SADDR			BIT(18)
 #define MII_XGMAC_CMD_SHIFT		16
-#define MII_XGMAC_WRITE			(1 << MII_XGMAC_CMD_SHIFT)
+#define MII_XGMAC_WRITE			BIT(MII_XGMAC_CMD_SHIFT)
 #define MII_XGMAC_READ			(3 << MII_XGMAC_CMD_SHIFT)
 #define MII_XGMAC_BUSY			BIT(22)
 #define MII_XGMAC_MAX_C22ADDR		3
@@ -545,6 +545,18 @@ int stmmac_mdio_register(struct net_device *ndev)
 	if (!mdio_bus_data)
 		return 0;
 
+	if (priv->plat->phyad_change) {
+		priv->speed = SPEED_100;
+		if (priv->plat->fix_mac_speed)
+			/* TODO: find the correct mode to call fix_mac_speed,
+			 * for time-being it is set to 0 over here as mode is not
+			 * utilized by the funciton.
+			 */
+			priv->plat->fix_mac_speed(priv->plat->bsp_priv, priv->speed, 0);
+		if (priv->mii && priv->plat->is_gpio_phy_reset)
+			stmmac_mdio_reset(priv->mii);
+	}
+
 	new_bus = mdiobus_alloc();
 	if (!new_bus)
 		return -ENOMEM;
@@ -553,13 +565,6 @@ int stmmac_mdio_register(struct net_device *ndev)
 		memcpy(new_bus->irq, mdio_bus_data->irqs, sizeof(new_bus->irq));
 
 	new_bus->name = "stmmac";
-
-	if (priv->plat->has_gmac4) {
-		if (priv->plat->has_c22_mdio_probe_capability)
-			new_bus->probe_capabilities = MDIOBUS_C22;
-		else
-			new_bus->probe_capabilities = MDIOBUS_C22_C45;
-	}
 
 	if (priv->plat->has_xgmac) {
 		new_bus->read = &stmmac_xgmac2_mdio_read_c22;

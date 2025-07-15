@@ -12,7 +12,11 @@ mem_buf_dev.ko
 smem.ko
 qcom-reboot-reason.ko
 qcom_wdt_core.ko
+qcom-dload-mode.ko
+debug_symbol.ko
+minidump.ko
 qcom_soc_wdt.ko
+dcc_v2.ko
 memory_dump_v2.ko
 qcom-scm.ko
 pinctrl-msm.ko
@@ -44,9 +48,11 @@ ufshcd-crypto-qti.ko
 sdhci-msm.ko
 cqhci.ko
 qcom-pdc.ko
+debug-regulator.ko
 qcom_rpmh.ko
 cmd-db.ko
 qcom_ice.ko
+mdt_loader.ko
 gdsc-regulator.ko
 proxy-consumer.ko
 rpmh-regulator.ko
@@ -56,5 +62,6 @@ gpucc-sm6150.ko
 icc-rpmh.ko
 icc-bcm-voter.ko
 icc-debug.ko
+spi-msm-geni.ko
 qnoc-qos.ko
 qnoc-sm6150.ko

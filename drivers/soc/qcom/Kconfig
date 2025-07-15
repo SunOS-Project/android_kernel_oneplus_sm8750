@@ -293,6 +293,14 @@ config QCOM_QFPROM_SYS
 
            Say y here to enable QFPROM SYS support.
 
+config MSM_CORE_HANG_DETECT
+        tristate "MSM Core Hang Detection Support"
+        help
+          This enables the core hang detection module. It causes SoC
+          reset on core hang detection and collects the core context
+          for hang. By using sysfs entries core hang detection can be
+          enabled or disabled dynamically.
+
 config QCOM_RAMP_CTRL
 	tristate "Qualcomm Ramp Controller driver"
 	depends on ARCH_QCOM || COMPILE_TEST
@@ -541,6 +549,15 @@ config QCOM_WDT_CORE
 	   only enables the framework, an individual Qualcomm Technologies, Inc.
 	   watchdog module must be loaded along with this for watchdog
 	   functionality.
+
+config QCOM_CX_IPEAK
+	tristate "Common driver to handle Cx iPeak limitation"
+	help
+	  Cx ipeak HW module is used to limit the current drawn by various
+	  subsystem blocks on Cx power rail. Each client needs to set their
+	  bit in tcsr register if it is going to cross its own threshold.
+	  If all clients are going to cross their thresholds then Cx ipeak
+	  hw module will raise an interrupt to cDSP block to throttle cDSP fmax.
 
 config QCOM_SOC_WATCHDOG
 	tristate "Qualcomm Technologies, Inc. Soc Watchdog"
@@ -1063,6 +1080,14 @@ config QCOM_PANEL_EVENT_NOTIFIER
 	  can use these notifications for power saving or align its operations
 	  with display panel power state.
 
+config QCOM_SPMI_PMIC_ERR_DBG
+	tristate "Qualcomm SPMI protocol error IRQ handler"
+	depends on QCOM_SCM
+	help
+	  Enabling this option adds SPMI PMIC error debug driver.
+	  It configures SPMI protocol IRQ to be triggered during SPMI HW error
+	  conditions, to collect and dump several PMIC arbiter registers and
+	  optionally some more debug data from test bus registers.
 
 config QTI_PMIC_GLINK
 	tristate "Enable support for PMIC GLINK"

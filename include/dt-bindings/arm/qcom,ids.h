@@ -288,6 +288,10 @@
 #define QCOM_ID_PARROTLITE		715
 #define QCOM_ID_TUNAP                   694
 #define QCOM_ID_QCS610			401
+#define QCOM_ID_CQ8750S                 705
+#define QCOM_ID_CQ8725S                 706
+#define QCOM_ID_MONTAGUE		581
+#define QCOM_ID_MONTAGUEP		582
 
 /*
  * The board type and revision information, used by Qualcomm bootloaders and
