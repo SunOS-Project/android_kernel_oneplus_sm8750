@@ -1,0 +1,8 @@
+config OPLUS_FAN
+  tristate "oplus fan support"
+  depends on PWM
+  help
+    this option enables support for the OPLUS FAN.
+    Say Y to enable support for the PWM FAN automatically.
+    To compile this driver as a module,
+    choose M here: the module will be called oplus_fan.

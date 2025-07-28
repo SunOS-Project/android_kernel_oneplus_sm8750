@@ -1,0 +1,1 @@
+obj-$(CONFIG_OPLUS_FAN)	+= oplus_fan.o

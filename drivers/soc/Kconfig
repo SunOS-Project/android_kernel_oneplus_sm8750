@@ -32,4 +32,36 @@ source "drivers/soc/ux500/Kconfig"
 source "drivers/soc/versatile/Kconfig"
 source "drivers/soc/xilinx/Kconfig"
 
+#ifdef OPLUS_FEATURE_MM_FEEDBACK
+source "drivers/soc/oplus/multimedia/Kconfig"
+#endif /* OPLUS_FEATURE_MM_FEEDBACK */
+
+#ifdef OPLUS_TRACKPOINT_REPORT
+source "drivers/soc/oplus/trackpoint/Kconfig"
+#endif /* OPLUS_TRACKPOINT_REPORT */
+
+#ifdef OPLUS_FEATURE_BOOT
+source "drivers/soc/oplus/boot/Kconfig"
+#endif /* OPLUS_FEATURE_BOOT */
+
+#ifdef OPLUS_FEATURE_MODEM_MINIDUMP
+source "drivers/soc/oplus/mdmrst/Kconfig"
+#endif /*OPLUS_FEATURE_MODEM_MINIDUMP*/
+
+#ifdef OPLUS_FEATURE_TP_BASIC
+source "drivers/soc/oplus/device_info/Kconfig"
+#endif /* OPLUS_FEATURE_TP_BASIC */
+
+#ifdef OPLUS_UFS_DRIVER
+source "drivers/soc/oplus/storage/common/ufs_oplus_dbg/Kconfig"
+#endif
+
+#ifdef OPLUS_FEATURE_DFT
+source "drivers/soc/oplus/dft/Kconfig"
+#endif /* OPLUS_FEATURE_DFT */
+
+#ifdef OPLUS_FEATURE_FPGA
+source "drivers/soc/oplus/fpga_notify/Kconfig"
+#endif /* OPLUS_FEATURE_FPGA *
+
 endmenu

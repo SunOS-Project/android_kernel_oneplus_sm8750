@@ -710,8 +710,8 @@ static int tmc_add_coresight_dev(struct amba_device *adev, const struct amba_id 
 	drvdata->atclk = devm_clk_get(dev, "atclk"); /* optional */
 	if (IS_ERR(drvdata->atclk) &&
 			of_property_read_bool(dev->of_node, "qcom,atclk-dependence")) {
-		dev_err(dev, "get atclk fail %ld\n",  PTR_ERR(drvdata->atclk));
-		return  PTR_ERR(drvdata->atclk);
+		dev_err(dev, "atclk is NULL\n");
+		return -EPROBE_DEFER;
 	}
 
 	if (!IS_ERR(drvdata->atclk)) {
@@ -816,6 +816,10 @@ static int tmc_add_coresight_dev(struct amba_device *adev, const struct amba_id 
 	if (IS_ERR(drvdata->csdev)) {
 		ret = PTR_ERR(drvdata->csdev);
 		goto out_disable_clk;
+	}
+
+	if (!strcmp(desc.name, "coresight-tmc-etf")) {
+		byte_cntr_attach_etf(drvdata->csdev);
 	}
 
 	drvdata->miscdev.name = desc.name;

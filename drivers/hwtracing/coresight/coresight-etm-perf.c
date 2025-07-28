@@ -492,6 +492,9 @@ static void etm_event_start(struct perf_event *event, int flags)
 	if (WARN_ON_ONCE(!sink))
 		goto fail_end_stop;
 
+	/* Save the event_data for this ETM */
+	ctxt->event_data = event_data;
+
 	/* Nothing will happen without a path */
 	if (coresight_enable_path(path, CS_MODE_PERF, handle))
 		goto fail_end_stop;
@@ -595,6 +598,9 @@ static void etm_event_stop(struct perf_event *event, int mode)
 
 	/* tell the core */
 	event->hw.state = PERF_HES_STOPPED;
+
+	/* Clear the event_data as this ETM is stopping the trace. */
+	ctxt->event_data = NULL;
 
 	/*
 	 * If the handle is not bound to an event anymore

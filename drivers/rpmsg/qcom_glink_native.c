@@ -230,9 +230,11 @@ struct glink_channel {
 	struct idr riids;
 	struct list_head defer_intents;
 
+
 	struct task_struct *rx_task;
 	struct list_head rx_queue;
 	wait_queue_head_t rx_wq;
+
 
 	struct glink_core_rx_intent *buf;
 	int buf_offset;
@@ -1642,6 +1644,7 @@ void qcom_glink_native_rx(struct qcom_glink *glink)
 		param1 = le16_to_cpu(msg.param1);
 		param2 = le32_to_cpu(msg.param2);
 
+		GLINK_INFO(glink->ilc, "cmd: %d\n", cmd);
 		switch (cmd) {
 		case GLINK_CMD_VERSION:
 		case GLINK_CMD_VERSION_ACK:
@@ -1688,6 +1691,7 @@ void qcom_glink_native_rx(struct qcom_glink *glink)
 			if (retry < 5)
 				continue;
 			else {
+				BUG_ON(1);
 				ret = -EINVAL;
 				break;
 			}
@@ -1948,12 +1952,30 @@ static int qcom_glink_request_intent(struct qcom_glink *glink,
 	if (ret)
 		goto unlock;
 
+#if 0
+/* Modify for reduce timeout for adsp. bug id[7855620] */
 	ret = wait_event_timeout(channel->intent_req_wq,
 				 READ_ONCE(channel->intent_req_result) == 0 ||
 				 (READ_ONCE(channel->intent_req_result) > 0 &&
 				  READ_ONCE(channel->intent_received)) ||
 				 glink->abort_tx,
 				 10 * HZ);
+#else
+	if ((glink->name && strstr(glink->name, "adsp")) &&
+		(channel->name && strstr(channel->name, "fastrpcglink-apps-dsp"))) {
+		ret = wait_event_timeout(channel->intent_req_wq,
+					 (READ_ONCE(channel->intent_req_result) >= 0 &&
+					 READ_ONCE(channel->intent_received)) ||
+					 glink->abort_tx,
+					 5 * HZ);
+	} else {
+		ret = wait_event_timeout(channel->intent_req_wq,
+					 (READ_ONCE(channel->intent_req_result) >= 0 &&
+					 READ_ONCE(channel->intent_received)) ||
+					 glink->abort_tx,
+					 10 * HZ);
+	}
+#endif
 	if (!ret) {
 		dev_err(glink->dev, "%s: intent request ack timed out (%d)\n",
 			channel->name, channel->intent_timeout_count);

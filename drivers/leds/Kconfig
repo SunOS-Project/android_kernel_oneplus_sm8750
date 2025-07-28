@@ -965,4 +965,8 @@ source "drivers/leds/trigger/Kconfig"
 comment "Simple LED drivers"
 source "drivers/leds/simple/Kconfig"
 
+comment "oplus fan drivers and LED drivers"
+source "drivers/leds/aw210xx/Kconfig"
+source "drivers/leds/fan/Kconfig"
+
 endif # NEW_LEDS
