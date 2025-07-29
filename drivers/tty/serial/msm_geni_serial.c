@@ -3223,7 +3223,7 @@ static int msm_geni_serial_handle_dma_rx(struct uart_port *uport, bool drop_rx)
 #ifdef CONFIG_OPLUS_POGOPIN_FUNCTION
 	if(pogo_keyboard_ops.check && pogo_keyboard_ops.recv){
 		if(pogo_keyboard_ops.check(uport)) {
-			pogo_keyboard_ops.recv((unsigned char *)(msm_port->rx_buf), rx_bytes);
+			pogo_keyboard_ops.recv((unsigned char *)(port->rx_buf), rx_bytes);
 		}
 	}
 #endif /* CONFIG_OPLUS_POGOPIN_FUNCTION */
