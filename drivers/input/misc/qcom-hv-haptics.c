@@ -1022,6 +1022,9 @@ static void richtap_clean_buf(struct haptics_chip *chip, int status);
 #ifdef OPLUS_FEATURE_CHG_BASIC
 struct haptics_chip *g_chip;
 static int haptics_toggle_module_enable(struct haptics_chip *chip);
+static int enable_memory_trig_effect(struct haptics_chip *chip);
+static int haptics_enable_play(struct haptics_chip *chip, bool en);
+static int trig_load_effect(struct haptics_chip *chip);
 #endif
 
 static struct haptics_chip *phapchip;
@@ -2080,6 +2083,24 @@ static int haptics_boost_vreg_enable(struct haptics_chip *chip, bool en)
 	chip->hboost_enabled = en;
 	return 0;
 }
+
+#ifdef OPLUS_FEATURE_CHG_BASIC
+static bool is_direct_play_enabled(struct haptics_chip *chip)
+{
+	int rc;
+	u8 val[2];
+
+	rc = haptics_get_status_data(chip, HAP_DRV_STS, val);
+	if (rc < 0)
+		return false;
+
+	if ((val[1] & HAP_DRV_PATTERN_SRC_STATUS_MASK) == DIRECT_PLAY){
+		return true;
+	}
+
+	return false;
+}
+#endif
 
 static bool is_swr_play_enabled(struct haptics_chip *chip)
 {
@@ -5276,18 +5297,17 @@ static int haptics_parse_hpwr_vreg_dt(struct haptics_chip *chip)
 #ifdef OPLUS_FEATURE_CHG_BASIC
 static irqreturn_t trig_irq_handler(int irq, void *data)
 {
+	int rc;
 	struct haptics_chip *chip = data;
 	if (!chip) {
 		dev_err(chip->dev,"trig_irq_handler null.\n");
 		return IRQ_HANDLED;
 	}
 	chip->current_irq = irq;
-	if ((chip->play.pattern_src == FIFO) &&
-		atomic_read(&chip->play.fifo_status.is_busy)) {
-		dev_err(chip->dev, "In FIFO playing, ignore trig\n");
-		return IRQ_HANDLED;
+	rc = enable_memory_trig_effect(chip);
+	if (rc < 0) {
+		dev_err(chip->dev, "enable memory trige ffect failed rc=%d\n",rc);
 	}
-	schedule_delayed_work(&chip->sw_trig_work, 0);
 	return IRQ_HANDLED;
 }
 #endif
@@ -7649,6 +7669,7 @@ static ssize_t trig_support_store(const struct class *c,
 	struct haptics_chip *chip = container_of(c,
 			struct haptics_chip, hap_class);
 	int val;
+	int rc;
 
 	if (kstrtouint(buf, 0, &val))
 		return -EINVAL;
@@ -7658,8 +7679,12 @@ static ssize_t trig_support_store(const struct class *c,
 	else
 		chip->trig_support = false;
 
-	if (chip->trig_support)
-		schedule_delayed_work(&chip->sw_trig_work, 0);
+	if (chip->trig_support) {
+		rc = enable_memory_trig_effect(chip);
+		if (rc < 0) {
+			dev_err(chip->dev, "enable memory trige ffect failed rc=%d\n",rc);
+		}
+	}
 
 	return count;
 }
@@ -8111,6 +8136,13 @@ static int enable_memory_trig_effect(struct haptics_chip *chip)
 		return -EFAULT;
 	}
 	mutex_lock(&chip->play.lock);
+	if (((chip->play.pattern_src == FIFO) && atomic_read(&chip->play.fifo_status.is_busy))
+			|| (is_direct_play_enabled(chip) && (chip->play.pattern_src == DIRECT_PLAY))) {
+		dev_err(chip->dev, "In %d playing, ignore trig\n", chip->play.pattern_src);
+		mutex_unlock(&chip->play.lock);
+		return 0;
+	}
+
 	chip->play.in_calibration = true;
 	rc = trig_load_effect(chip);
 	if (rc < 0) {
